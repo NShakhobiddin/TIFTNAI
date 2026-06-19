@@ -1,289 +1,534 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="uz">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Dekla AI — your intelligent assistant for work, study and everyday life. Chat, create and get things done faster." />
-  <meta name="theme-color" content="#0b0b14" />
-  <title>Dekla AI — Your intelligent assistant</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/styles.css" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0e2545">
+  <meta name="description" content="Dekla AI — TIFTN, bojxona to'lovlari va hujjatlarni aniqlovchi aqlli kalkulyator.">
+  <title>Dekla AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/css/app.css">
 </head>
 <body>
-  <!-- Animated background -->
-  <div class="bg-orbs" aria-hidden="true">
-    <span class="orb orb--1"></span>
-    <span class="orb orb--2"></span>
-    <span class="orb orb--3"></span>
-  </div>
+  <!-- App mount point -->
+  <div id="app"></div>
 
-  <!-- Header -->
-  <header class="site-header" id="header">
-    <div class="container nav">
-      <a href="#" class="brand" aria-label="Dekla AI home">
-        <span class="brand__mark" aria-hidden="true">
-          <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
-            <path d="M16 2l3.6 8.4L28 14l-8.4 3.6L16 26l-3.6-8.4L4 14l8.4-3.6L16 2z" fill="url(#g)"/>
-            <defs>
-              <linearGradient id="g" x1="4" y1="2" x2="28" y2="26" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#7c5cff"/><stop offset="1" stop-color="#19c3ff"/>
-              </linearGradient>
-            </defs>
-          </svg>
+  <!-- Design template (rendered by the runtime) -->
+  <template id="app-tpl">
+<div class="app-root" style="background: {{ screenBg }}">
+<!-- status bar -->
+      <div style="height:52px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 9px;z-index:20;color: {{ statusColor }}">
+        <span style="font-size:15px;font-weight:700;letter-spacing:.2px">9:41</span>
+        <span style="display:flex;align-items:center;gap:6px">
+          <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"></rect><rect x="5" y="4" width="3" height="8" rx="1"></rect><rect x="10" y="2" width="3" height="10" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg>
+          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 2.5c2.3 0 4.4.9 6 2.4l1.3-1.4C13.9 1.6 11.3.5 8.5.5S3.1 1.6 1.2 3.5L2.5 4.9c1.6-1.5 3.7-2.4 6-2.4z" opacity=".9"></path><path d="M8.5 6c1.2 0 2.3.5 3.1 1.3l1.3-1.4C11.7 4.7 10.2 4 8.5 4s-3.2.7-4.4 1.9l1.3 1.4C6.2 6.5 7.3 6 8.5 6z" opacity=".9"></path><circle cx="8.5" cy="10" r="1.6"></circle></svg>
+          <svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="21" height="11" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1.2"></rect><rect x="2.6" y="2.6" width="16" height="7.8" rx="1.6" fill="currentColor"></rect><rect x="23.4" y="4" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"></rect></svg>
         </span>
-        <span class="brand__name">Dekla<span>AI</span></span>
-      </a>
-
-      <nav class="nav__links" id="navLinks" aria-label="Primary">
-        <a href="#features">Features</a>
-        <a href="#how">How it works</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#faq">FAQ</a>
-      </nav>
-
-      <div class="nav__actions">
-        <a href="#chat" class="btn btn--ghost">Sign in</a>
-        <a href="#chat" class="btn btn--primary">Get started</a>
       </div>
 
-      <button class="nav__toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
-        <span></span><span></span><span></span>
-      </button>
-    </div>
-  </header>
-
-  <main>
-    <!-- Hero -->
-    <section class="hero container">
-      <div class="hero__copy">
-        <span class="pill">
-          <span class="pill__dot"></span> New · Dekla AI 2.0 is here
-        </span>
-        <h1 class="hero__title">
-          Meet <span class="grad">Dekla AI</span> — your intelligent everyday assistant
-        </h1>
-        <p class="hero__sub">
-          Ask anything, create faster, and get real answers. Dekla writes, summarizes,
-          plans and codes — right from your pocket. Smart, fast and always on.
-        </p>
-
-        <form class="hero__cta" id="ctaForm" novalidate>
-          <input type="email" id="ctaEmail" class="hero__input" placeholder="Enter your email" autocomplete="email" />
-          <button type="submit" class="btn btn--primary btn--lg">Try for free</button>
-        </form>
-        <p class="hero__note" id="ctaNote">No credit card required · Free 14-day trial</p>
-
-        <div class="hero__stats">
-          <div><strong data-count="2000000">0</strong><span>Active users</span></div>
-          <div><strong data-count="98">0</strong><span>% satisfaction</span></div>
-          <div><strong data-count="40">0</strong><span>+ languages</span></div>
-        </div>
-      </div>
-
-      <!-- Clean phone mockup — no decorative frames in front -->
-      <div class="hero__visual">
-        <div class="phone" id="phone">
-          <div class="phone__screen">
-            <div class="app">
-              <div class="app__bar">
-                <div class="app__avatar" aria-hidden="true">
-                  <svg viewBox="0 0 32 32" width="20" height="20" fill="none">
-                    <path d="M16 2l3.6 8.4L28 14l-8.4 3.6L16 26l-3.6-8.4L4 14l8.4-3.6L16 2z" fill="url(#g2)"/>
-                    <defs><linearGradient id="g2" x1="4" y1="2" x2="28" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#7c5cff"/><stop offset="1" stop-color="#19c3ff"/></linearGradient></defs>
-                  </svg>
-                </div>
-                <div class="app__title">
-                  <strong>Dekla AI</strong>
-                  <span><i class="dot-live"></i> online</span>
-                </div>
-              </div>
-
-              <div class="app__chat" id="appChat" aria-live="polite"></div>
-
-              <div class="app__input">
-                <span class="app__field">Ask Dekla anything…</span>
-                <button class="app__send" aria-label="Send">
-                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.999.999 0 00-1.39 1.16L4 11l9 1-9 1-1.99 6.24a1 1 0 001.39 1.16z" fill="currentColor"/></svg>
-                </button>
-              </div>
+      <!-- shared logo header -->
+      <sc-if value="{{ showLogoHeader }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none;display:flex;align-items:center;padding:2px 16px 12px;position:relative;min-height:34px">
+          <button onclick="{{ h.back }}" style="background:#fff;border:1px solid #e9edf4;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;padding:0">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg>
+          </button>
+          <div style="position:absolute;left:0;right:0;display:flex;justify-content:center;pointer-events:none">
+            <div style="display:flex;align-items:center;gap:6px">
+              <svg width="23" height="23" viewBox="0 0 40 40" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M7 5h12.5C30.3 5 37 11.2 37 20s-6.7 15-17.5 15H7v-9h11.4c4.7 0 7.6-2.5 7.6-6s-2.9-6-7.6-6H7V5z" fill="#14284c"></path><path d="M10.5 28.5L24 15" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round"></path><path d="M18.8 14.2h6.6v6.6" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>
+              <span style="font-size:17px;font-weight:800;color:#14284c;letter-spacing:-.2px">Dekla&nbsp;<span style="color:#1ca354">AI</span></span>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </sc-if>
 
-    <!-- Trusted by -->
-    <section class="logos container" aria-label="Trusted by teams">
-      <p>Trusted by fast-moving teams worldwide</p>
-      <div class="logos__row">
-        <span>Northwind</span><span>Acme Co</span><span>Quantio</span><span>Lumen</span><span>Vertex</span>
-      </div>
-    </section>
+      <!-- ============ SCROLL AREA ============ -->
+      <div class="scr" style="flex:1;overflow-y:auto;position:relative">
 
-    <!-- Features -->
-    <section class="section container" id="features">
-      <div class="section__head">
-        <h2>Everything you need in one assistant</h2>
-        <p>Dekla brings powerful AI tools together so you can think, create and ship faster.</p>
-      </div>
+      <!-- ============ SPLASH ============ -->
+      <sc-if value="{{ isSplash }}" hint-placeholder-val="{{ true }}">
+        <div data-screen-label="Splash" onclick="{{ h.login }}" style="position:absolute;inset:0;margin-top:-52px;padding:118px 30px 40px;display:flex;flex-direction:column;align-items:center;cursor:pointer;background:radial-gradient(120% 80% at 50% 18%,#13315c 0%,#0e2545 55%,#0a1c38 100%);overflow:hidden">
+          <div style="position:absolute;bottom:90px;left:0;right:0;height:240px;opacity:.5;background:radial-gradient(60% 100% at 50% 100%,rgba(28,163,84,.22),transparent 70%)"></div>
+          <svg style="position:absolute;bottom:120px;left:-10%;width:120%;opacity:.35" height="200" viewBox="0 0 400 200" fill="none"><path d="M0 180 Q200 60 400 180" stroke="#2f6dd0" stroke-width="1.2" opacity=".5"></path><path d="M0 200 Q200 90 400 200" stroke="#1ca354" stroke-width="1.2" opacity=".4"></path><circle cx="120" cy="140" r="2.5" fill="#1ca354"></circle><circle cx="300" cy="120" r="2.5" fill="#3f86e8"></circle><circle cx="220" cy="150" r="2" fill="#1ca354"></circle></svg>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:22px;opacity:1;z-index:2">
+            <svg width="92" height="92" viewBox="0 0 40 40" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M7 5h12.5C30.3 5 37 11.2 37 20s-6.7 15-17.5 15H7v-9h11.4c4.7 0 7.6-2.5 7.6-6s-2.9-6-7.6-6H7V5z" fill="#ffffff"></path><path d="M10.5 28.5L24 15" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round"></path><path d="M18.8 14.2h6.6v6.6" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg>
+            <div style="font-size:38px;font-weight:800;color:#fff;letter-spacing:-.5px;white-space:nowrap">Dekla <span style="color:#2fc36a">AI</span></div>
+            <div style="font-size:15px;line-height:1.6;color:#b9c8e0;text-align:center;max-width:260px;font-weight:500">TIFTN, bojxona to'lovlari va hujjatlarni aniqlovchi aqlli kalkulyator</div>
+          </div>
+          <div style="margin-top:auto;display:flex;gap:11px;z-index:2;opacity:1">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:70px"><div style="width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7fe0a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg></div><span style="font-size:10.5px;color:#9fb1cc;text-align:center;line-height:1.3">Aniq hisob-kitob</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:70px"><div style="width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="#7fe0a3"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path></svg></div><span style="font-size:10.5px;color:#9fb1cc;text-align:center;line-height:1.3">Tezkor natija</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:70px"><div style="width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7fe0a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 018 0v4"></path></svg></div><span style="font-size:10.5px;color:#9fb1cc;text-align:center;line-height:1.3">Ishonchli ma'lumotlar</span></div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:7px;width:70px"><div style="width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#7fe0a3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div><span style="font-size:10.5px;color:#9fb1cc;text-align:center;line-height:1.3">24/7 buyurtma</span></div>
+          </div>
+          <div style="margin-top:24px;font-size:12px;color:#6f86a8;z-index:2">Davom etish uchun bosing</div>
+        </div>
+      </sc-if>
 
-      <div class="grid grid--3">
-        <article class="card reveal">
-          <div class="card__ic ic--violet">💬</div>
-          <h3>Natural conversations</h3>
-          <p>Chat like you would with a teammate. Dekla understands context and remembers what matters.</p>
-        </article>
-        <article class="card reveal">
-          <div class="card__ic ic--cyan">⚡</div>
-          <h3>Instant answers</h3>
-          <p>Get accurate, well-structured responses in seconds — from quick facts to deep research.</p>
-        </article>
-        <article class="card reveal">
-          <div class="card__ic ic--pink">✍️</div>
-          <h3>Smart writing</h3>
-          <p>Draft emails, posts and reports. Dekla matches your tone and polishes every word.</p>
-        </article>
-        <article class="card reveal">
-          <div class="card__ic ic--green">🧠</div>
-          <h3>Code & debug</h3>
-          <p>Generate, explain and fix code across 40+ languages with helpful, runnable snippets.</p>
-        </article>
-        <article class="card reveal">
-          <div class="card__ic ic--amber">🔒</div>
-          <h3>Private & secure</h3>
-          <p>Your data is encrypted end-to-end. We never train on your conversations.</p>
-        </article>
-        <article class="card reveal">
-          <div class="card__ic ic--blue">📱</div>
-          <h3>Works everywhere</h3>
-          <p>Web, iOS and Android — your chats sync instantly across all your devices.</p>
-        </article>
-      </div>
-    </section>
+      <!-- ============ LOGIN ============ -->
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Kirish" style="padding:18px 22px 30px;opacity:1">
+          <div style="display:flex;justify-content:center;margin:14px 0 30px">
+            <div style="display:flex;align-items:center;gap:7px"><svg width="28" height="28" viewBox="0 0 40 40" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M7 5h12.5C30.3 5 37 11.2 37 20s-6.7 15-17.5 15H7v-9h11.4c4.7 0 7.6-2.5 7.6-6s-2.9-6-7.6-6H7V5z" fill="#14284c"></path><path d="M10.5 28.5L24 15" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round"></path><path d="M18.8 14.2h6.6v6.6" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg><span style="font-size:21px;font-weight:800;color:#14284c;white-space:nowrap">Dekla <span style="color:#1ca354">AI</span></span></div>
+          </div>
+          <h1 style="font-size:23px;font-weight:700;color:#14284c;margin:0 0 6px">Kirish</h1>
+          <p style="font-size:14px;color:#7c879b;margin:0 0 26px;line-height:1.5">Hisobingizga kirish uchun telefon raqamingizni kiriting</p>
+          <div style="font-size:13px;font-weight:600;color:#3a455c;margin:0 0 9px">Telefon raqami</div>
+          <div style="display:flex;gap:9px;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:6px;background:#fff;border:1px solid #dde3ee;border-radius:13px;padding:0 13px;font-size:15px;font-weight:600;color:#14284c"><span style="font-size:17px">🇺🇿</span> +998 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2.5"><path d="M6 9l6 6 6-6"></path></svg></div>
+            <input placeholder="90 123 45 67" style="flex:1;background:#fff;border:1px solid #dde3ee;border-radius:13px;padding:15px;font-size:16px;color:#14284c;font-family:inherit;outline:none;letter-spacing:.5px">
+          </div>
+          <button onclick="{{ h.sms }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:18px">SMS kod olish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg></button>
+          <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:15px;padding:15px">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+            <div><div style="font-size:13.5px;font-weight:700;color:#14284c;margin-bottom:3px">Xavfsiz va ishonchli</div><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Ma'lumotlaringiz shifrlangan holda saqlanadi va hech kim bilan bo'lishilmaydi.</div></div>
+          </div>
+          <p style="font-size:12px;color:#8b94a6;text-align:center;line-height:1.6;margin:26px 8px 0">Davom etish orqali siz <span style="color:#1ca354;font-weight:600">Foydalanish shartlari</span> va <span style="color:#1ca354;font-weight:600">Maxfiylik siyosatiga</span> rozilik bildirasiz.</p>
+        </div>
+      </sc-if>
 
-    <!-- How it works -->
-    <section class="section container" id="how">
-      <div class="section__head">
-        <h2>Get started in three steps</h2>
-        <p>From sign-up to your first answer in under a minute.</p>
-      </div>
-      <div class="steps">
-        <div class="step reveal"><span class="step__n">1</span><h3>Create your account</h3><p>Sign up free with email — no card needed.</p></div>
-        <div class="step reveal"><span class="step__n">2</span><h3>Ask anything</h3><p>Type your question or pick a ready-made prompt.</p></div>
-        <div class="step reveal"><span class="step__n">3</span><h3>Get things done</h3><p>Refine, copy and ship your results instantly.</p></div>
-      </div>
-    </section>
+      <!-- ============ SMS ============ -->
+      <sc-if value="{{ isSms }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="SMS tasdiqlash" style="padding:6px 22px 30px;opacity:1;position:relative">
+          <button onclick="{{ h.back }}" style="position:absolute;left:16px;top:2px;background:#fff;border:1px solid #e9edf4;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button>
+          <div style="display:flex;justify-content:center;margin:10px 0 28px"><div style="display:flex;align-items:center;gap:7px"><svg width="26" height="26" viewBox="0 0 40 40" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M7 5h12.5C30.3 5 37 11.2 37 20s-6.7 15-17.5 15H7v-9h11.4c4.7 0 7.6-2.5 7.6-6s-2.9-6-7.6-6H7V5z" fill="#14284c"></path><path d="M10.5 28.5L24 15" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round"></path><path d="M18.8 14.2h6.6v6.6" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg><span style="font-size:20px;font-weight:800;color:#14284c;white-space:nowrap">Dekla <span style="color:#1ca354">AI</span></span></div></div>
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 8px;text-align:center">SMS kodni kiriting</h1>
+          <p style="font-size:13.5px;color:#7c879b;margin:0 auto 28px;line-height:1.55;text-align:center;max-width:270px">+998 90 123 45 67 raqamiga yuborilgan 6 xonali kodni kiriting</p>
+          <div style="display:flex;gap:9px;justify-content:center;margin-bottom:24px">
+            <div style="width:46px;height:56px;border:1.5px solid #dde3ee;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:700;color:#14284c;background:#fff">1</div>
+            <div style="width:46px;height:56px;border:1.5px solid #dde3ee;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:700;color:#14284c;background:#fff">2</div>
+            <div style="width:46px;height:56px;border:1.5px solid #dde3ee;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:700;color:#14284c;background:#fff">3</div>
+            <div style="width:46px;height:56px;border:1.5px solid #dde3ee;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:700;color:#14284c;background:#fff">4</div>
+            <div style="width:46px;height:56px;border:1.5px solid #dde3ee;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:700;color:#14284c;background:#fff">5</div>
+            <div style="width:46px;height:56px;border:1.8px solid #1ca354;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:700;color:#14284c;background:#f3fbf6">6</div>
+          </div>
+          <p style="font-size:13.5px;color:#7c879b;text-align:center;margin:0 0 22px">Qayta yuborish: <span style="color:#1ca354;font-weight:700">00:45</span></p>
+          <button onclick="{{ h.onb }}" style="width:100%;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Tasdiqlash</button>
+          <p style="font-size:13px;color:#7c879b;text-align:center;margin:20px 0 0">Kod kelmadimi? <span style="color:#1ca354;font-weight:700">Qayta yuborish</span></p>
+        </div>
+      </sc-if>
 
-    <!-- Pricing -->
-    <section class="section container" id="pricing">
-      <div class="section__head">
-        <h2>Simple, transparent pricing</h2>
-        <p>Start free. Upgrade when you're ready.</p>
-      </div>
+      <!-- ============ ONBOARDING ============ -->
+      <sc-if value="{{ isOnb }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Onboarding" style="padding:8px 24px 30px;opacity:1;min-height:100%;display:flex;flex-direction:column">
+          <div style="display:flex;justify-content:flex-end"><button onclick="{{ h.dash }}" style="background:none;border:none;font-size:13px;color:#8b94a6;font-weight:600;font-family:inherit;cursor:pointer">O'tkazib yuborish</button></div>
+          <h1 style="font-size:24px;font-weight:800;color:#14284c;margin:14px 0 26px;line-height:1.3;letter-spacing:-.3px">Dekla AI bilan<br>3 qadamda hisoblang</h1>
+          <div style="background:linear-gradient(160deg,#eef3fb,#e3ecf8);border:1px solid #dfe9f7;border-radius:22px;height:230px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;margin-bottom:30px">
+            <sc-if value="{{ onb0 }}" hint-placeholder-val="{{ true }}"><svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="#9bb4d6" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 00-1-1.7l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.7l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"></path><path d="M3.3 7L12 12l8.7-5M12 22V12"></path></svg></sc-if>
+            <sc-if value="{{ onb1 }}" hint-placeholder-val="{{ false }}"><div style="text-align:center"><svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="#9bb4d6" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><div style="margin-top:10px;font-size:18px;font-weight:800;color:#1ca354;font-family:monospace">8471.30.000 0</div></div></sc-if>
+            <sc-if value="{{ onb2 }}" hint-placeholder-val="{{ false }}"><svg width="110" height="110" viewBox="0 0 24 24" fill="none" stroke="#9bb4d6" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6M9 13l2 2 4-4"></path></svg></sc-if>
+            <div style="position:absolute;bottom:14px;right:14px;width:40px;height:40px;border-radius:50%;background:#1ca354;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div>
+          </div>
+          <div style="display:flex;justify-content:center;margin-bottom:14px"><div style="width:34px;height:34px;border-radius:50%;background:#14284c;color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:15px"><sc-if value="{{ onb0 }}" hint-placeholder-val="{{ true }}">1</sc-if><sc-if value="{{ onb1 }}" hint-placeholder-val="{{ false }}">2</sc-if><sc-if value="{{ onb2 }}" hint-placeholder-val="{{ false }}">3</sc-if></div></div>
+          <sc-if value="{{ onb0 }}" hint-placeholder-val="{{ true }}"><div style="text-align:center;margin-bottom:6px"><div style="font-size:17px;font-weight:700;color:#14284c;margin-bottom:8px">Tovarni kiriting</div><div style="font-size:13.5px;color:#7c879b;line-height:1.55;max-width:280px;margin:0 auto">Tovar nomi, tavsifi yoki HS kodini kiriting. Sun'iy intellekt tavsifni tahlil qiladi.</div></div></sc-if>
+          <sc-if value="{{ onb1 }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;margin-bottom:6px"><div style="font-size:17px;font-weight:700;color:#14284c;margin-bottom:8px">TIFTN kodni aniqlang</div><div style="font-size:13.5px;color:#7c879b;line-height:1.55;max-width:280px;margin:0 auto">Sun'iy intellekt eng mos TIFTN kodini aniqlaydi va asoslab beradi.</div></div></sc-if>
+          <sc-if value="{{ onb2 }}" hint-placeholder-val="{{ false }}"><div style="text-align:center;margin-bottom:6px"><div style="font-size:17px;font-weight:700;color:#14284c;margin-bottom:8px">To'lov va hujjatlarni ko'ring</div><div style="font-size:13.5px;color:#7c879b;line-height:1.55;max-width:280px;margin:0 auto">Bojxona to'lovlari, ruxsatnomalar va xavf darajasini bir joyda ko'ring.</div></div></sc-if>
+          <div style="display:flex;justify-content:center;gap:7px;margin:18px 0 22px">
+            <div style="width:22px;height:7px;border-radius:4px;background: {{ onbDot0 }}"></div>
+            <div style="width:7px;height:7px;border-radius:4px;background: {{ onbDot1 }}"></div>
+            <div style="width:7px;height:7px;border-radius:4px;background: {{ onbDot2 }}"></div>
+          </div>
+          <button onclick="{{ h.nextOnb }}" style="margin-top:auto;width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">{{ onbBtn }} <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
 
-      <div class="toggle" role="group" aria-label="Billing period">
-        <button class="toggle__btn is-active" data-plan="monthly">Monthly</button>
-        <button class="toggle__btn" data-plan="yearly">Yearly <em>−20%</em></button>
-      </div>
+      <!-- ============ DASHBOARD ============ -->
+      <sc-if value="{{ isDash }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Dashboard" style="opacity:1">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:2px 18px 14px">
+            <button style="background:#fff;border:1px solid #e9edf4;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"></path></svg></button>
+            <div style="display:flex;align-items:center;gap:6px"><svg width="22" height="22" viewBox="0 0 40 40" fill="none"><path fill-rule="evenodd" clip-rule="evenodd" d="M7 5h12.5C30.3 5 37 11.2 37 20s-6.7 15-17.5 15H7v-9h11.4c4.7 0 7.6-2.5 7.6-6s-2.9-6-7.6-6H7V5z" fill="#14284c"></path><path d="M10.5 28.5L24 15" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round"></path><path d="M18.8 14.2h6.6v6.6" stroke="#1ca354" stroke-width="4.3" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg><span style="font-size:17px;font-weight:800;color:#14284c;white-space:nowrap">Dekla <span style="color:#1ca354">AI</span></span></div>
+            <button style="background:#fff;border:1px solid #e9edf4;width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.7 21a2 2 0 01-3.4 0"></path></svg><span style="position:absolute;top:8px;right:9px;width:7px;height:7px;border-radius:50%;background:#e0463f;border:1.5px solid #fff"></span></button>
+          </div>
+          <div style="padding:0 18px 110px">
+            <!-- free requests dark card -->
+            <div onclick="{{ h.tariffs }}" style="background:linear-gradient(135deg,#16335e,#0f2545);border-radius:20px;padding:20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;margin-bottom:16px;box-shadow:0 14px 30px -12px rgba(15,37,69,.5)">
+              <div><div style="font-size:13px;color:#9fb6d6;margin-bottom:8px;font-weight:500">Qolgan bepul so'rovlar</div><div style="font-size:34px;font-weight:800;color:#fff;line-height:1">28<span style="font-size:18px;color:#7e93b5;font-weight:600">/30</span></div><div style="font-size:12px;color:#7e93b5;margin-top:7px">Bugun foydalanish limiti</div></div>
+              <svg width="74" height="74" viewBox="0 0 74 74"><circle cx="37" cy="37" r="30" fill="none" stroke="rgba(255,255,255,.13)" stroke-width="7"></circle><circle cx="37" cy="37" r="30" fill="none" stroke="#2fc36a" stroke-width="7" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="12.5" transform="rotate(-90 37 37)"></circle><text x="37" y="42" text-anchor="middle" fill="#fff" font-size="15" font-weight="700" font-family="Plus Jakarta Sans">93%</text></svg>
+            </div>
+            <!-- 3 actions -->
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:22px">
+              <button onclick="{{ h.new }}" style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:15px 8px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;font-family:inherit"><div style="width:42px;height:42px;border-radius:13px;background:#eef2fb;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M8 6h8M8 10h2M14 10h2M8 14h2M14 14h2M8 18h8"></path></svg></div><span style="font-size:11.5px;font-weight:700;color:#14284c;text-align:center;line-height:1.25">Yangi hisoblash</span></button>
+              <button onclick="{{ h.excel }}" style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:15px 8px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;font-family:inherit"><div style="width:42px;height:42px;border-radius:13px;background:#e9f6ee;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 8l8 8M16 8l-8 8"></path></svg></div><span style="font-size:11.5px;font-weight:700;color:#14284c;text-align:center;line-height:1.25">Excel yuklash</span></button>
+              <button onclick="{{ h.image }}" style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:15px 8px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;font-family:inherit"><div style="width:42px;height:42px;border-radius:13px;background:#f0ecfb;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#7c5cd6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div><span style="font-size:11.5px;font-weight:700;color:#14284c;text-align:center;line-height:1.25">Rasm orqali</span></button>
+            </div>
+            <div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:10px">Tezkor qidiruv</div>
+            <div onclick="{{ h.tezkor }}" style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #dde3ee;border-radius:14px;padding:14px 15px;margin-bottom:22px;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><span style="font-size:14px;color:#9aa4b6">Tovar nomi yoki TIFTN kodi</span></div>
+            <div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:10px">Qisqa statistika</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:11px;background:#eef2fb;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></div><div><div style="font-size:19px;font-weight:800;color:#14284c;line-height:1">12</div><div style="font-size:11px;color:#8b94a6;margin-top:3px">Bugungi so'rovlar</div></div></div>
+              <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:11px;background:#e9f6ee;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"></path><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"></path></svg></div><div><div style="font-size:19px;font-weight:800;color:#14284c;line-height:1">9</div><div style="font-size:11px;color:#8b94a6;margin-top:3px">Topilgan kodlar</div></div></div>
+              <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:11px;background:#fef3e6;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d98a23" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div><div style="font-size:19px;font-weight:800;color:#14284c;line-height:1">3</div><div style="font-size:11px;color:#8b94a6;margin-top:3px">Yuklangan fayllar</div></div></div>
+              <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;display:flex;align-items:center;gap:11px"><div style="width:38px;height:38px;border-radius:11px;background:#e9f6ee;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 11-5.9-9.1"></path><path d="M22 4L12 14.01l-3-3"></path></svg></div><div><div style="font-size:19px;font-weight:800;color:#1ca354;line-height:1">98%</div><div style="font-size:11px;color:#8b94a6;margin-top:3px">Aniqlik darajasi</div></div></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
 
-      <div class="grid grid--3 pricing">
-        <article class="plan reveal">
-          <h3>Free</h3>
-          <p class="plan__price"><span class="amount" data-monthly="0" data-yearly="0">$0</span><small>/mo</small></p>
-          <p class="plan__desc">For getting started.</p>
-          <ul>
-            <li>20 messages / day</li>
-            <li>Standard model</li>
-            <li>Web access</li>
-          </ul>
-          <a href="#chat" class="btn btn--ghost btn--block">Start free</a>
-        </article>
+      <!-- ============ TEZKOR QIDIRUV ============ -->
+      <sc-if value="{{ isTezkor }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Tezkor qidiruv" style="opacity:1">
+          <div style="display:flex;align-items:center;padding:2px 16px 14px;position:relative;min-height:34px"><button onclick="{{ h.back }}" style="background:#fff;border:1px solid #e9edf4;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><div style="position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:700;color:#14284c;pointer-events:none">Tezkor qidiruv</div></div>
+          <div style="padding:0 18px 30px">
+            <div style="display:flex;background:#eef1f7;border-radius:13px;padding:4px;margin-bottom:16px"><div style="flex:1;text-align:center;background:#14284c;color:#fff;border-radius:10px;padding:9px;font-size:13px;font-weight:700">Tovar nomi</div><div style="flex:1;text-align:center;color:#7c879b;padding:9px;font-size:13px;font-weight:600">TIFTN kodi</div></div>
+            <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #dde3ee;border-radius:14px;padding:14px 15px;margin-bottom:24px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input placeholder="Tovar nomini kiriting" style="flex:1;border:none;outline:none;font-size:14px;color:#14284c;font-family:inherit"></div>
+            <div style="display:flex;justify-content:space-between;margin-bottom:12px"><span style="font-size:13px;font-weight:700;color:#14284c">So'nggi qidiruvlar</span><span style="font-size:12px;color:#1ca354;font-weight:600">Tozalash</span></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;overflow:hidden;margin-bottom:24px">
+              <div onclick="{{ h.product }}" style="display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #f0f2f7;cursor:pointer"><span style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#3a455c"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>elektr sim</span><span style="font-size:12.5px;color:#9aa4b6;font-family:monospace">8544.42.90</span></div>
+              <div onclick="{{ h.product }}" style="display:flex;align-items:center;justify-content:space-between;padding:13px 15px;border-bottom:1px solid #f0f2f7;cursor:pointer"><span style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#3a455c"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>polietilen quvur</span><span style="font-size:12.5px;color:#9aa4b6;font-family:monospace">3917.21.00</span></div>
+              <div onclick="{{ h.product }}" style="display:flex;align-items:center;justify-content:space-between;padding:13px 15px;cursor:pointer"><span style="display:flex;align-items:center;gap:10px;font-size:13.5px;color:#3a455c"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg>paxta ip</span><span style="font-size:12.5px;color:#9aa4b6;font-family:monospace">5205.12.00</span></div>
+            </div>
+            <div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:12px">Mashhur toifalar</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e9edf4;border-radius:13px;padding:13px"><span style="font-size:16px">💡</span><span style="font-size:12.5px;font-weight:600;color:#3a455c">Elektr jihozlar</span></div>
+              <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e9edf4;border-radius:13px;padding:13px"><span style="font-size:16px">🧴</span><span style="font-size:12.5px;font-weight:600;color:#3a455c">Plastmassa</span></div>
+              <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e9edf4;border-radius:13px;padding:13px"><span style="font-size:16px">🧵</span><span style="font-size:12.5px;font-weight:600;color:#3a455c">To'qimachilik</span></div>
+              <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e9edf4;border-radius:13px;padding:13px"><span style="font-size:16px">⚙️</span><span style="font-size:12.5px;font-weight:600;color:#3a455c">Metall buyumlar</span></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
 
-        <article class="plan plan--featured reveal">
-          <span class="plan__badge">Most popular</span>
-          <h3>Pro</h3>
-          <p class="plan__price"><span class="amount" data-monthly="12" data-yearly="9">$12</span><small>/mo</small></p>
-          <p class="plan__desc">For power users & creators.</p>
-          <ul>
-            <li>Unlimited messages</li>
-            <li>Advanced model</li>
-            <li>Priority speed</li>
-            <li>File uploads</li>
-          </ul>
-          <a href="#chat" class="btn btn--primary btn--block">Go Pro</a>
-        </article>
+      <!-- ============ NEW ANALYSIS ============ -->
+      <sc-if value="{{ isNew }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Yangi tahlil" style="opacity:1">
+          <div style="display:flex;align-items:center;padding:2px 16px 14px;position:relative;min-height:34px"><button onclick="{{ h.back }}" style="background:#fff;border:1px solid #e9edf4;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><div style="position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:700;color:#14284c;pointer-events:none">Yangi tahlil</div></div>
+          <div style="padding:6px 18px 30px">
+            <p style="font-size:13.5px;color:#7c879b;margin:0 0 18px">Ma'lumot kiritish usulini tanlang</p>
+            <button onclick="{{ h.product }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:15px;background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;font-family:inherit"><div style="width:50px;height:50px;border-radius:15px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg></div><div style="flex:1"><div style="font-size:15.5px;font-weight:700;color:#14284c;margin-bottom:3px">Tovar nomi</div><div style="font-size:12.5px;color:#8b94a6;line-height:1.4">Tovar nomi orqali TIFTN kodini toping</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+            <button onclick="{{ h.image }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:15px;background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;font-family:inherit"><div style="width:50px;height:50px;border-radius:15px;background:#f0ecfb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#7c5cd6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div><div style="flex:1"><div style="font-size:15.5px;font-weight:700;color:#14284c;margin-bottom:3px">Rasm orqali</div><div style="font-size:12.5px;color:#8b94a6;line-height:1.4">Tovar suratidan kodni aniqlang</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+            <button onclick="{{ h.excel }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:15px;background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:18px;margin-bottom:12px;cursor:pointer;font-family:inherit"><div style="width:50px;height:50px;border-radius:15px;background:#e9f6ee;display:flex;align-items:center;justify-content:center;flex:none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 8l8 8M16 8l-8 8"></path></svg></div><div style="flex:1"><div style="font-size:15.5px;font-weight:700;color:#14284c;margin-bottom:3px">Excel orqali</div><div style="font-size:12.5px;color:#8b94a6;line-height:1.4">Excel fayl yuklab, ombor tahlil qiling</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+            <button onclick="{{ h.hujjat }}" style="width:100%;text-align:left;display:flex;align-items:center;gap:15px;background:#f7f9fc;border:1px dashed #c9d3e2;border-radius:18px;padding:16px;cursor:pointer;font-family:inherit"><div style="width:44px;height:44px;border-radius:13px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c;margin-bottom:2px">Hujjat yuklash</div><div style="font-size:12px;color:#8b94a6;line-height:1.4">Invoice, spetsifikatsiya yoki packing list</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></button>
+          </div>
+        </div>
+      </sc-if>
 
-        <article class="plan reveal">
-          <h3>Team</h3>
-          <p class="plan__price"><span class="amount" data-monthly="29" data-yearly="23">$29</span><small>/mo</small></p>
-          <p class="plan__desc">For growing teams.</p>
-          <ul>
-            <li>Everything in Pro</li>
-            <li>Shared workspaces</li>
-            <li>Admin controls</li>
-            <li>SSO & support</li>
-          </ul>
-          <a href="#chat" class="btn btn--ghost btn--block">Contact sales</a>
-        </article>
-      </div>
-    </section>
+      <!-- ============ PRODUCT INPUT ============ -->
+      <sc-if value="{{ isProduct }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Tovar ma'lumoti" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 5px">Tovar ma'lumoti</h1>
+          <p style="font-size:13.5px;color:#7c879b;margin:0 0 22px;line-height:1.5">Tovar haqida ma'lumotlarni kiriting</p>
+          <div style="font-size:13px;font-weight:600;color:#3a455c;margin:0 0 8px">Tovar nomi <span style="color:#e0463f">*</span></div>
+          <input placeholder="Masalan: Mis quvur, Samsung televizor" style="width:100%;background:#fff;border:1px solid #dde3ee;border-radius:13px;padding:14px 15px;font-size:15px;color:#14284c;font-family:inherit;outline:none;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;color:#3a455c;margin:0 0 8px">Qo'shimcha tavsif</div>
+          <textarea placeholder="Tovar haqida qo'shimcha ma'lumot (ixtiyoriy)" style="width:100%;background:#fff;border:1px solid #dde3ee;border-radius:13px;padding:14px 15px;font-size:15px;color:#14284c;font-family:inherit;outline:none;margin-bottom:16px;min-height:74px;resize:none"></textarea>
+          <div style="font-size:13px;font-weight:600;color:#3a455c;margin:0 0 8px">Material</div>
+          <select style="width:100%;background:#fff;border:1px solid #dde3ee;border-radius:13px;padding:14px 15px;font-size:15px;color:#14284c;font-family:inherit;outline:none;margin-bottom:16px;appearance:none"><option>Materialni tanlang</option><option>Plastmassa</option><option>Metall</option><option>Mato</option><option>Aralash</option></select>
+          <div style="font-size:13px;font-weight:600;color:#3a455c;margin:0 0 8px">Brend / Model</div>
+          <input placeholder="Brend yoki modelni kiriting" style="width:100%;background:#fff;border:1px solid #dde3ee;border-radius:13px;padding:14px 15px;font-size:15px;color:#14284c;font-family:inherit;outline:none;margin-bottom:16px">
+          <div style="font-size:13px;font-weight:600;color:#3a455c;margin:0 0 8px">Ishlatilish sohasi</div>
+          <select style="width:100%;background:#fff;border:1px solid #dde3ee;border-radius:13px;padding:14px 15px;font-size:15px;color:#14284c;font-family:inherit;outline:none;margin-bottom:18px;appearance:none"><option>Sohani tanlang</option><option>Santexnika, HVAC</option><option>Maishiy texnika</option><option>Sanoat</option></select>
+          <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:18px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Aniq va to'liq ma'lumotlar hisob-kitob aniqligini ta'minlaydi.</div></div>
+          <button onclick="{{ h.ai }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
 
-    <!-- FAQ -->
-    <section class="section container" id="faq">
-      <div class="section__head">
-        <h2>Frequently asked questions</h2>
-        <p>Everything else you might want to know.</p>
-      </div>
-      <div class="faq">
-        <details class="faq__item"><summary>Is Dekla AI free to use?<span class="faq__plus"></span></summary><p>Yes. The Free plan lets you send up to 20 messages a day with no credit card. Upgrade anytime for unlimited use.</p></details>
-        <details class="faq__item"><summary>Which devices are supported?<span class="faq__plus"></span></summary><p>Dekla works in any modern browser and has native iOS and Android apps. Your chats sync across all of them automatically.</p></details>
-        <details class="faq__item"><summary>Is my data private?<span class="faq__plus"></span></summary><p>Absolutely. Conversations are encrypted, and we never use your data to train our models.</p></details>
-        <details class="faq__item"><summary>Can I cancel anytime?<span class="faq__plus"></span></summary><p>Yes — there are no contracts. Cancel in one click and you keep access until the end of your billing period.</p></details>
-      </div>
-    </section>
+      <!-- ============ IMAGE UPLOAD ============ -->
+      <sc-if value="{{ isImage }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Rasm yuklash" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 5px">Rasm yuklash</h1>
+          <p style="font-size:13.5px;color:#7c879b;margin:0 0 20px;line-height:1.5">Tovaringizni ko'rsatuvchi rasmlarni yuklang</p>
+          <div style="border:1.6px dashed #b9c7dd;border-radius:18px;background:#f5f8fc;padding:34px 20px;display:flex;flex-direction:column;align-items:center;text-align:center;margin-bottom:18px">
+            <div style="width:58px;height:58px;border-radius:50%;background:#eaf0fa;display:flex;align-items:center;justify-content:center;margin-bottom:14px"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div>
+            <div style="font-size:14px;font-weight:700;color:#14284c;line-height:1.5;margin-bottom:6px">Rasmlarni shu yerga sudrab tashlang yoki tanlash uchun bosing</div>
+            <div style="font-size:11.5px;color:#9aa4b6;line-height:1.5">JPG, PNG, WEBP · Maksimal 10 ta rasm</div>
+          </div>
+          <div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:10px">Yuklangan rasmlar</div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:20px">
+            <div style="aspect-ratio:1;border-radius:12px;background:#e9eef5;border:1px solid #e1e7f0;display:flex;align-items:center;justify-content:center;position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b3bdcd" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg><span style="position:absolute;top:-5px;right:-5px;width:18px;height:18px;border-radius:50%;background:#14284c;color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center">×</span></div>
+            <div style="aspect-ratio:1;border-radius:12px;background:#e9eef5;border:1.8px solid #1ca354;display:flex;align-items:center;justify-content:center;position:relative"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#8aa0bd" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg><span style="position:absolute;bottom:4px;right:4px;width:18px;height:18px;border-radius:50%;background:#1ca354;color:#fff;display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></span></div>
+            <div style="aspect-ratio:1;border-radius:12px;background:#e9eef5;border:1px solid #e1e7f0;display:flex;align-items:center;justify-content:center"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#b3bdcd" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><path d="M21 15l-5-5L5 21"></path></svg></div>
+            <div style="aspect-ratio:1;border-radius:12px;background:#f5f8fc;border:1.5px dashed #c0cbdb;display:flex;align-items:center;justify-content:center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></div>
+          </div>
+          <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:18px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Rasmda bir nechta tovar bo'lsa, keyingi qadamda asosiy tovarni belgilaysiz.</div></div>
+          <button onclick="{{ h.ai }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Tasdiqlash va davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></button>
+        </div>
+      </sc-if>
 
-    <!-- CTA -->
-    <section class="cta-band container" id="chat">
-      <div class="cta-band__inner reveal">
-        <h2>Ready to think faster with Dekla?</h2>
-        <p>Join over 2 million people getting more done with AI.</p>
-        <form class="hero__cta hero__cta--center" id="ctaForm2" novalidate>
-          <input type="email" id="ctaEmail2" class="hero__input" placeholder="Enter your email" autocomplete="email" />
-          <button type="submit" class="btn btn--primary btn--lg">Get started free</button>
-        </form>
-        <p class="hero__note" id="ctaNote2">Free 14-day trial · Cancel anytime</p>
-      </div>
-    </section>
-  </main>
+      <!-- ============ EXCEL ============ -->
+      <sc-if value="{{ isExcel }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Excel yuklash" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 5px">Excel yuklash</h1>
+          <p style="font-size:13.5px;color:#7c879b;margin:0 0 18px;line-height:1.5">Excel faylingizni yuklang</p>
+          <div style="display:flex;align-items:center;justify-content:center;gap:8px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:13px;padding:12px;margin-bottom:18px;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg><span style="font-size:13.5px;font-weight:700;color:#2f6dd0">Excel shablonni yuklab olish</span></div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:18px;display:flex;align-items:center;gap:13px;margin-bottom:18px"><div style="width:46px;height:46px;border-radius:12px;background:#e9f6ee;display:flex;align-items:center;justify-content:center;flex:none"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 8l8 8M16 8l-8 8"></path></svg></div><div style="flex:1"><div style="font-size:14.5px;font-weight:700;color:#14284c">Tovarlar_royxati.xlsx</div><div style="font-size:12px;color:#8b94a6;margin-top:2px">128 KB · Yuklandi</div></div><div style="width:24px;height:24px;border-radius:50%;background:#1ca354;display:flex;align-items:center;justify-content:center"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:7px"><span style="color:#7c879b;font-weight:600">Yuklash jarayoni</span><span style="color:#1ca354;font-weight:700">72%</span></div>
+          <div style="height:9px;border-radius:6px;background:#e7ecf3;overflow:hidden;margin-bottom:20px"><div style="width:72%;height:100%;background:#1ca354;border-radius:6px"></div></div>
+          <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:18px"><svg width="20" height="20" viewBox="0 0 24 24" fill="#f0b429" style="flex:none"><path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"></path></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Excel faylida ustun nomlari aniq va to'g'ri bo'lishi tavsiya etiladi.</div></div>
+          <button onclick="{{ h.ai }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
 
-  <!-- Footer -->
-  <footer class="footer">
-    <div class="container footer__grid">
-      <div class="footer__brand">
-        <a href="#" class="brand">
-          <span class="brand__mark" aria-hidden="true">
-            <svg viewBox="0 0 32 32" width="24" height="24" fill="none"><path d="M16 2l3.6 8.4L28 14l-8.4 3.6L16 26l-3.6-8.4L4 14l8.4-3.6L16 2z" fill="url(#g3)"/><defs><linearGradient id="g3" x1="4" y1="2" x2="28" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#7c5cff"/><stop offset="1" stop-color="#19c3ff"/></linearGradient></defs></svg>
-          </span>
-          <span class="brand__name">Dekla<span>AI</span></span>
-        </a>
-        <p>Your intelligent everyday assistant.</p>
-      </div>
-      <div class="footer__col"><h4>Product</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#how">How it works</a></div>
-      <div class="footer__col"><h4>Company</h4><a href="#">About</a><a href="#">Blog</a><a href="#">Careers</a></div>
-      <div class="footer__col"><h4>Legal</h4><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Security</a></div>
-    </div>
-    <div class="container footer__bottom">
-      <span>© <span id="year"></span> Dekla AI. All rights reserved.</span>
-      <div class="footer__social">
-        <a href="#" aria-label="X">𝕏</a>
-        <a href="#" aria-label="GitHub">⌂</a>
-        <a href="#" aria-label="LinkedIn">in</a>
-      </div>
-    </div>
-  </footer>
+      <!-- ============ HUJJAT ============ -->
+      <sc-if value="{{ isHujjat }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Hujjat yuklash" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 5px">Hujjat yuklash</h1>
+          <p style="font-size:13.5px;color:#7c879b;margin:0 0 20px;line-height:1.5">Quyidagi hujjatlarni yuklang</p>
+          <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="width:42px;height:42px;border-radius:12px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c">Invoice</div><div style="font-size:11.5px;color:#8b94a6;margin-top:1px">Hisob-faktura yoki invoice hujjati</div></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg></div>
+            <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="width:42px;height:42px;border-radius:12px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c">Spetsifikatsiya</div><div style="font-size:11.5px;color:#8b94a6;margin-top:1px">Tovar ro'yxati va texnik xususiyatlari</div></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg></div>
+            <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="width:42px;height:42px;border-radius:12px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c">Packing List</div><div style="font-size:11.5px;color:#8b94a6;margin-top:1px">Qadoqlash ro'yxati hujjati</div></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg></div>
+            <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="width:42px;height:42px;border-radius:12px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c">Texnik pasport</div><div style="font-size:11.5px;color:#8b94a6;margin-top:1px">Texnik pasport yoki ko'rsatma hujjati</div></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg></div>
+          </div>
+          <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:18px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Hujjatlar yuklansa, tahlil aniqligi va ishonchliligi oshadi.</div></div>
+          <button onclick="{{ h.ai }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
 
-  <script src="assets/js/app.js" defer></script>
+      <!-- ============ AI QUESTIONS ============ -->
+      <sc-if value="{{ isAi }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="AI savollar" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 5px">AI savollar formasi</h1>
+          <p style="font-size:13.5px;color:#7c879b;margin:0 0 22px;line-height:1.5">TIFTN kodini aniq aniqlash uchun quyidagi savollarga javob bering.</p>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px;margin-bottom:13px">
+            <div style="font-size:14px;font-weight:700;color:#14284c;margin-bottom:11px;line-height:1.4">1. Tovar qaysi materialdan tayyorlangan?</div>
+            <select style="width:100%;background:#f7f9fc;border:1px solid #dde3ee;border-radius:11px;padding:13px 14px;font-size:14px;color:#14284c;font-family:inherit;outline:none;appearance:none"><option>Tanlang</option><option>Plastmassa</option><option>Metall</option><option>Mato</option><option>Aralash</option></select>
+            <div style="font-size:11px;color:#9aa4b6;margin-top:9px;line-height:1.45">Bu savol tovarni to'g'ri guruhga ajratish uchun kerak.</div>
+          </div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px;margin-bottom:13px">
+            <div style="font-size:14px;font-weight:700;color:#14284c;margin-bottom:11px;line-height:1.4">2. Tovar qanday ishlatiladi?</div>
+            <select style="width:100%;background:#f7f9fc;border:1px solid #dde3ee;border-radius:11px;padding:13px 14px;font-size:14px;color:#14284c;font-family:inherit;outline:none;appearance:none"><option>Tanlang</option><option>Ma'lumotlarni qayta ishlash</option><option>Maishiy maqsadda</option><option>Sanoat uskunasi</option></select>
+          </div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px;margin-bottom:16px">
+            <div style="font-size:14px;font-weight:700;color:#14284c;margin-bottom:11px;line-height:1.4">3. Tovarning asosiy xususiyati nima?</div>
+            <select style="width:100%;background:#f7f9fc;border:1px solid #dde3ee;border-radius:11px;padding:13px 14px;font-size:14px;color:#14284c;font-family:inherit;outline:none;appearance:none"><option>Tanlang</option><option>Avtomatik qayta ishlash</option><option>Saqlash qurilmasi</option><option>Boshqaruv bloki</option></select>
+          </div>
+          <button onclick="{{ h.tiftn }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:#14284c;border:1px solid #d9e0ec;border-radius:15px;padding:14px;font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:11px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c879b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>Bilmayman</button>
+          <button onclick="{{ h.tiftn }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
+
+      <!-- ============ TIFTN RESULT ============ -->
+      <sc-if value="{{ isTiftn }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="TIFTN natijasi" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 3px;text-align:center">TIFTN natijasi</h1>
+          <p style="font-size:13px;color:#7c879b;margin:0 0 18px;text-align:center">Tavsiya etilgan kod</p>
+          <div style="background:#eefaf2;border:1.5px solid #b8e6c9;border-radius:16px;padding:18px;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+            <span style="font-size:25px;font-weight:800;color:#1ca354;font-family:monospace;letter-spacing:.5px">8471.30.000 0</span>
+            <div style="width:28px;height:28px;border-radius:50%;background:#1ca354;display:flex;align-items:center;justify-content:center;flex:none"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div>
+          </div>
+          <p style="font-size:13px;color:#6a7689;line-height:1.55;margin:0 0 18px">Avtomatik ma'lumotlarni qayta ishlovchi mashinalar; ularning bloklari; magnit yoki optik o'quv qurilmalari.</p>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px"><span style="font-size:13px;font-weight:600;color:#3a455c;display:flex;align-items:center;gap:5px">Moslik darajasi <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#aeb7c6" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg></span><span style="font-size:15px;font-weight:800;color:#1ca354">94%</span></div>
+          <div style="height:10px;border-radius:6px;background:#e7ecf3;overflow:hidden;margin-bottom:18px"><div style="width:94%;height:100%;background:#1ca354;border-radius:6px"></div></div>
+          <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:18px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Ushbu kod siz kiritgan ma'lumotlarga eng mos keladi.</div></div>
+          <button onclick="{{ h.value }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:11px">Bu kodni tanlash <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></button>
+          <button onclick="{{ h.alt }}" style="width:100%;background:#fff;color:#14284c;border:1px solid #d9e0ec;border-radius:15px;padding:14px;font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer">Alternativ kodlarni ko'rish</button>
+        </div>
+      </sc-if>
+
+      <!-- ============ ALTERNATIVES ============ -->
+      <sc-if value="{{ isAlt }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Alternativ kodlar" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 5px">Alternativ kodlar</h1>
+          <p style="font-size:13.5px;color:#7c879b;margin:0 0 18px;line-height:1.5">Boshqa ehtimoliy kodlar va moslik darajasi</p>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;overflow:hidden">
+            <div style="display:flex;padding:11px 14px;background:#f4f6fb;font-size:11px;font-weight:700;color:#8b94a6;text-transform:uppercase;letter-spacing:.3px"><span style="flex:1.3">Kod</span><span style="width:52px;text-align:center">Moslik</span><span style="flex:1.2;text-align:right">Farqlovchi belgi</span></div>
+            <div style="display:flex;align-items:center;padding:13px 14px;border-top:1px solid #f0f2f7;background:#f3fbf6"><span style="flex:1.3;font-size:12.5px;font-weight:700;color:#14284c;font-family:monospace">8471.30.000 0</span><span style="width:52px;text-align:center"><span style="background:#e6f6ec;color:#1a8c44;font-size:12px;font-weight:800;padding:3px 7px;border-radius:8px">94%</span></span><span style="flex:1.2;text-align:right;font-size:11px;color:#7c879b;line-height:1.35">Nas bilan ishlovchi qayta ishlash</span></div>
+            <div style="display:flex;align-items:center;padding:13px 14px;border-top:1px solid #f0f2f7"><span style="flex:1.3;font-size:12.5px;font-weight:600;color:#3a455c;font-family:monospace">8471.41.000 0</span><span style="width:52px;text-align:center"><span style="background:#e6f6ec;color:#1a8c44;font-size:12px;font-weight:800;padding:3px 7px;border-radius:8px">72%</span></span><span style="flex:1.2;text-align:right;font-size:11px;color:#7c879b;line-height:1.35">Markaziy protsessor bloki</span></div>
+            <div style="display:flex;align-items:center;padding:13px 14px;border-top:1px solid #f0f2f7"><span style="flex:1.3;font-size:12.5px;font-weight:600;color:#3a455c;font-family:monospace">8471.49.000 0</span><span style="width:52px;text-align:center"><span style="background:#fef0e0;color:#c9821a;font-size:12px;font-weight:800;padding:3px 7px;border-radius:8px">48%</span></span><span style="flex:1.2;text-align:right;font-size:11px;color:#7c879b;line-height:1.35">Kirish/chiqish qurilmalari</span></div>
+            <div style="display:flex;align-items:center;padding:13px 14px;border-top:1px solid #f0f2f7"><span style="flex:1.3;font-size:12.5px;font-weight:600;color:#3a455c;font-family:monospace">8523.51.900 0</span><span style="width:52px;text-align:center"><span style="background:#fdeaea;color:#d84a4a;font-size:12px;font-weight:800;padding:3px 7px;border-radius:8px">36%</span></span><span style="flex:1.2;text-align:right;font-size:11px;color:#7c879b;line-height:1.35">Saqlash qurilmalari</span></div>
+          </div>
+          <button onclick="{{ h.value }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:18px">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
+
+      <!-- ============ VALUE & COSTS ============ -->
+      <sc-if value="{{ isValue }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Qiymat va xarajatlar" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 4px">Qiymat va xarajatlar</h1>
+          <p style="font-size:13px;color:#7c879b;margin:0 0 18px">CIP Toshkent shartlari asosida</p>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:8px 16px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0f2f7"><span style="font-size:13.5px;color:#3a455c;font-weight:500">Invoice qiymati (USD)</span><input value="{{ invoice }}" oninput="{{ h.onInvoice }}" style="width:110px;text-align:right;border:1px solid #dde3ee;border-radius:9px;padding:7px 10px;font-size:14px;font-weight:700;color:#14284c;font-family:inherit;outline:none"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0f2f7"><span style="font-size:13.5px;color:#3a455c;font-weight:500">Transport (USD)</span><input value="{{ transport }}" oninput="{{ h.onTransport }}" style="width:110px;text-align:right;border:1px solid #dde3ee;border-radius:9px;padding:7px 10px;font-size:14px;font-weight:700;color:#14284c;font-family:inherit;outline:none"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0f2f7"><span style="font-size:13.5px;color:#3a455c;font-weight:500">Sug'urta (USD)</span><input value="{{ insurance }}" oninput="{{ h.onInsurance }}" style="width:110px;text-align:right;border:1px solid #dde3ee;border-radius:9px;padding:7px 10px;font-size:14px;font-weight:700;color:#14284c;font-family:inherit;outline:none"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid #f0f2f7"><span style="font-size:13.5px;color:#3a455c;font-weight:500">Boshqa xarajatlar (USD)</span><input value="{{ other }}" oninput="{{ h.onOther }}" style="width:110px;text-align:right;border:1px solid #dde3ee;border-radius:9px;padding:7px 10px;font-size:14px;font-weight:700;color:#14284c;font-family:inherit;outline:none"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0"><span style="font-size:13.5px;color:#3a455c;font-weight:500">Valyuta kursi (MB)</span><input value="{{ rate }}" oninput="{{ h.onRate }}" style="width:110px;text-align:right;border:1px solid #dde3ee;border-radius:9px;padding:7px 10px;font-size:14px;font-weight:700;color:#14284c;font-family:inherit;outline:none"></div>
+          </div>
+          <div style="background:linear-gradient(135deg,#16335e,#0f2545);border-radius:18px;padding:20px;position:relative;overflow:hidden;margin-bottom:18px">
+            <div style="font-size:13px;color:#9fb6d6;margin-bottom:6px;display:flex;align-items:center;gap:6px;font-weight:500">CIP Toshkent qiymati <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6f86a8" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg></div>
+            <div style="font-size:32px;font-weight:800;color:#fff;line-height:1.1">{{ cipUsdStr }} <span style="font-size:16px;color:#7e93b5;font-weight:600">USD</span></div>
+            <div style="font-size:14px;color:#9fb6d6;margin-top:8px;font-weight:600">{{ cipUzsStr }} UZS</div>
+            <div style="font-size:11.5px;color:#6f86a8;margin-top:3px">UZS kursi asosida</div>
+          </div>
+          <button onclick="{{ h.pay }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
+
+      <!-- ============ CUSTOMS PAYMENTS ============ -->
+      <sc-if value="{{ isPay }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Bojxona to'lovlari" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 4px">Bojxona to'lovlari</h1>
+          <p style="font-size:13px;color:#7c879b;margin:0 0 16px">Hisoblangan to'lovlar ro'yxati</p>
+          <div onclick="{{ h.toggleCert }}" style="display:flex;align-items:center;justify-content:space-between;background:#fff;border:1px solid #e9edf4;border-radius:14px;padding:13px 15px;margin-bottom:16px;cursor:pointer">
+            <div style="display:flex;align-items:center;gap:10px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6M9 15l2 2 4-4"></path></svg><span style="font-size:13.5px;font-weight:600;color:#14284c">{{ certLabel }}</span></div>
+            <div style="width:44px;height:26px;border-radius:14px;padding:3px;display:flex;background: {{ certToggleBg }}; justify-content: {{ certToggleJustify }}"><div style="width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div></div>
+          </div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;overflow:hidden;margin-bottom:16px">
+            <div style="display:flex;padding:11px 15px;background:#f4f6fb;font-size:11px;font-weight:700;color:#8b94a6;text-transform:uppercase;letter-spacing:.3px"><span style="flex:1.6">To'lov turi</span><span style="width:48px;text-align:center">Stavka</span><span style="flex:1;text-align:right">Summa UZS</span></div>
+            <sc-for list="{{ payments }}" as="p" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;padding:13px 15px;border-top:1px solid #f0f2f7"><span style="flex:1.6;font-size:13px;font-weight:600;color:#14284c">{{ p.label }}</span><span style="width:48px;text-align:center;font-size:12.5px;color:#7c879b;font-weight:600">{{ p.rate }}</span><span style="flex:1;text-align:right;font-size:13px;font-weight:700;color:#14284c">{{ p.uzs }}</span></div>
+            </sc-for>
+          </div>
+          <div style="background:#eefaf2;border:1.5px solid #b8e6c9;border-radius:18px;padding:20px;text-align:center;margin-bottom:18px">
+            <div style="font-size:13px;color:#3a7a52;font-weight:600;margin-bottom:7px">Jami to'lovlar</div>
+            <div style="font-size:28px;font-weight:800;color:#1ca354;line-height:1.1">{{ jamiUzsStr }} <span style="font-size:15px;color:#5aa97a;font-weight:700">UZS</span></div>
+            <div style="font-size:12.5px;color:#5aa97a;margin-top:6px;font-weight:600">USD ekvivalenti: {{ jamiUsdStr }}</div>
+          </div>
+          <button onclick="{{ h.permit }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
+
+      <!-- ============ PERMITS ============ -->
+      <sc-if value="{{ isPermit }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Ruxsatnoma va sertifikatlar" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 4px">Ruxsatnoma va sertifikatlar</h1>
+          <p style="font-size:13px;color:#7c879b;margin:0 0 18px;line-height:1.5">Tovar va HS kodi asosida zarur hujjatlar</p>
+          <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:18px">
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:11px;background:#fdeaea;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d84a4a" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></div><span style="font-size:14px;font-weight:700;color:#14284c">Muvofiqlik sertifikati</span></div><span style="background:#fdeaea;color:#d84a4a;font-size:11px;font-weight:800;padding:4px 9px;border-radius:8px">Majburiy</span></div><div style="font-size:12px;color:#8b94a6;line-height:1.5;margin-bottom:10px">O'zbekiston standartlariga mos. Beruvchi: Sanoat xavfsizligi qo'mitasi.</div><div style="font-size:12px;color:#2f6dd0;font-weight:700;display:flex;align-items:center;gap:4px">Tartibini ko'rish <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></div></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:11px;background:#fef3e6;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d98a23" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg></div><span style="font-size:14px;font-weight:700;color:#14284c">Fitosanitariya sertifikati</span></div><span style="background:#fef3e6;color:#c9821a;font-size:11px;font-weight:800;padding:4px 9px;border-radius:8px">Ehtimoliy</span></div><div style="font-size:12px;color:#8b94a6;line-height:1.5;margin-bottom:10px">O'simlik mahsulotlari uchun. Beruvchi: Karantin inspeksiyasi.</div><div style="font-size:12px;color:#2f6dd0;font-weight:700;display:flex;align-items:center;gap:4px">Tartibini ko'rish <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></div></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:11px;background:#e6f6ec;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a8c44" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></div><span style="font-size:14px;font-weight:700;color:#14284c">Yong'in xavfsizligi</span></div><span style="background:#e6f6ec;color:#1a8c44;font-size:11px;font-weight:800;padding:4px 9px;border-radius:8px">Talab qilinmaydi</span></div><div style="font-size:12px;color:#8b94a6;line-height:1.5">Ushbu tovar uchun talab qilinmaydi.</div></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:16px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:7px"><div style="display:flex;align-items:center;gap:10px"><div style="width:36px;height:36px;border-radius:11px;background:#eef2fb;display:flex;align-items:center;justify-content:center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg></div><span style="font-size:14px;font-weight:700;color:#14284c">Texnik reglament</span></div><span style="background:#eef2fb;color:#2f6dd0;font-size:11px;font-weight:800;padding:4px 9px;border-radius:8px">Aniqlash kerak</span></div><div style="font-size:12px;color:#8b94a6;line-height:1.5">Tovar tarkibiga qarab aniqlashtiriladi.</div></div>
+          </div>
+          <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:18px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Ma'lumotlar normativ hujjatlarga asoslanadi va avtomatik yangilanadi.</div></div>
+          <button onclick="{{ h.risk }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
+
+      <!-- ============ RISK ============ -->
+      <sc-if value="{{ isRisk }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Risk bahosi" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 4px">Risk bahosi</h1>
+          <p style="font-size:13px;color:#7c879b;margin:0 0 18px;line-height:1.5">Import operatsiyasi xavf darajasi</p>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:24px 18px;display:flex;flex-direction:column;align-items:center;margin-bottom:16px">
+            <svg width="240" height="150" viewBox="0 0 200 130">
+              <path d="M20 110 A80 80 0 0 1 87.5 31" fill="none" stroke="#2fb35c" stroke-width="15" stroke-linecap="round"></path>
+              <path d="M90 29.5 A80 80 0 0 1 130 35" fill="none" stroke="#f0b429" stroke-width="15"></path>
+              <path d="M132 36.5 A80 80 0 0 1 158 56" fill="none" stroke="#f3792b" stroke-width="15"></path>
+              <path d="M159.5 57.5 A80 80 0 0 1 180 110" fill="none" stroke="#e0463f" stroke-width="15" stroke-linecap="round"></path>
+              <text x="20" y="126" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">0</text>
+              <text x="100" y="18" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">50</text>
+              <text x="180" y="126" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">100</text>
+              <g transform="rotate(-39.6 100 110)"><line x1="100" y1="110" x2="100" y2="42" stroke="#14284c" stroke-width="4" stroke-linecap="round"></line></g>
+              <circle cx="100" cy="110" r="8" fill="#14284c"></circle>
+            </svg>
+            <div style="font-size:42px;font-weight:800;color:#1ca354;line-height:1;margin-top:-6px">28</div>
+            <div style="font-size:14px;font-weight:700;color:#1ca354;margin-top:5px;display:flex;align-items:center;gap:6px">Past risk <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 11-5.9-9.1"></path><path d="M22 4L12 14l-3-3"></path></svg></div>
+          </div>
+          <div style="background:#eef3fb;border:1px solid #dfe9f7;border-radius:16px;padding:16px;margin-bottom:16px"><div style="display:flex;align-items:center;gap:9px;margin-bottom:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><span style="font-size:14px;font-weight:700;color:#14284c">Amaliy tavsiya</span></div><div style="font-size:12.5px;color:#6a7689;line-height:1.55">Hujjatlaringiz to'liq va to'g'ri tayyorlangan. Past risk darajasi bojxona rasmiylashtiruvi tez va muammosiz o'tishini ko'rsatadi.</div></div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:16px;margin-bottom:18px;display:flex;flex-direction:column;gap:11px">
+            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c"><span style="width:10px;height:10px;border-radius:50%;background:#2fb35c"></span>0 – 30 · Past risk</div>
+            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c"><span style="width:10px;height:10px;border-radius:50%;background:#f0b429"></span>31 – 60 · O'rta risk</div>
+            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c"><span style="width:10px;height:10px;border-radius:50%;background:#e0463f"></span>61 – 100 · Yuqori risk</div>
+          </div>
+          <button onclick="{{ h.final }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Yakuniy natija <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+        </div>
+      </sc-if>
+
+      <!-- ============ FINAL RESULT ============ -->
+      <sc-if value="{{ isFinal }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Yakuniy natija" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 4px">Yakuniy natija</h1>
+          <p style="font-size:13px;color:#7c879b;margin:0 0 18px;line-height:1.5">Hisob-kitob yakunlandi. Quyidagi natijalarni ko'rib chiqing.</p>
+          <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:18px">
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;display:flex;align-items:center;gap:13px"><div style="width:40px;height:40px;border-radius:11px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div><div style="font-size:11.5px;color:#8b94a6">TIFTN kodi</div><div style="font-size:16px;font-weight:800;color:#14284c;font-family:monospace">8471.30.000 0</div></div></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;display:flex;align-items:center;gap:13px"><div style="width:40px;height:40px;border-radius:11px;background:#e9f6ee;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><circle cx="12" cy="12" r="3"></circle></svg></div><div><div style="font-size:11.5px;color:#8b94a6">Bojxona qiymati</div><div style="font-size:16px;font-weight:800;color:#1ca354">{{ cipUsdStr }} USD</div></div></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;display:flex;align-items:center;gap:13px"><div style="width:40px;height:40px;border-radius:11px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="18" rx="2"></rect><path d="M2 9h20M7 3v6"></path></svg></div><div><div style="font-size:11.5px;color:#8b94a6">Umumiy to'lov</div><div style="font-size:16px;font-weight:800;color:#14284c">{{ jamiUzsStr }} UZS</div></div></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;display:flex;align-items:center;gap:13px"><div style="width:40px;height:40px;border-radius:11px;background:#e6f6ec;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1a8c44" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg></div><div><div style="font-size:11.5px;color:#8b94a6">Risk darajasi</div><div style="font-size:16px;font-weight:800;color:#1ca354">Past risk (28/100)</div></div></div>
+          </div>
+          <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:11px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"></path></svg>PDF yuklab olish</button>
+          <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#1ca354;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer;margin-bottom:14px"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 8l8 8M16 8l-8 8"></path></svg>Excel yuklab olish</button>
+          <p style="font-size:11.5px;color:#9aa4b6;text-align:center;margin:0 0 14px">Hisobotlaringiz 30 kun davomida saqlanadi</p>
+          <button onclick="{{ h.dash }}" style="width:100%;background:#fff;color:#14284c;border:1px solid #d9e0ec;border-radius:15px;padding:14px;font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer">Bosh sahifaga qaytish</button>
+        </div>
+      </sc-if>
+
+      <!-- ============ PROFILE ============ -->
+      <sc-if value="{{ isProfile }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Profil" style="padding:0 18px 110px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 16px">Profil</h1>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:16px;display:flex;align-items:center;gap:13px;margin-bottom:18px"><div style="width:52px;height:52px;border-radius:50%;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"></path></svg></div><div><div style="font-size:16px;font-weight:700;color:#14284c">Akmal Saidov</div><div style="font-size:12.5px;color:#7c879b;margin-top:2px">+998 90 123 45 67</div><div style="font-size:12px;color:#9aa4b6;margin-top:1px">akmal.saidov@gmail.com</div></div></div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;overflow:hidden;margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:1px solid #f0f2f7"><span style="display:flex;align-items:center;gap:11px;font-size:14px;color:#14284c;font-weight:500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c879b" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M2 12h20M12 2a15 15 0 010 20 15 15 0 010-20"></path></svg>Til</span><span style="display:flex;align-items:center;gap:6px;font-size:13px;color:#9aa4b6">O'zbekcha <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:1px solid #f0f2f7"><span style="display:flex;align-items:center;gap:11px;font-size:14px;color:#14284c;font-weight:500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c879b" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 000 18 6 6 0 000-18z"></path></svg>Mavzu</span><span style="font-size:13px;color:#9aa4b6">Tizim bo'yicha</span></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 15px"><span style="display:flex;align-items:center;gap:11px;font-size:14px;color:#14284c;font-weight:500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c879b" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"></path></svg>Bildirishnomalar</span><div style="width:42px;height:25px;border-radius:14px;background:#1ca354;padding:3px;display:flex;justify-content:flex-end"><div style="width:19px;height:19px;border-radius:50%;background:#fff"></div></div></div>
+          </div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;overflow:hidden;margin-bottom:14px">
+            <div onclick="{{ h.tariffs }}" style="display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:1px solid #f0f2f7;cursor:pointer"><span style="display:flex;align-items:center;gap:11px;font-size:14px;color:#14284c;font-weight:500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c879b" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"></rect><path d="M2 10h20"></path></svg>To'lov va obuna</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></div>
+            <div onclick="{{ h.help }}" style="display:flex;align-items:center;justify-content:space-between;padding:14px 15px;border-bottom:1px solid #f0f2f7;cursor:pointer"><span style="display:flex;align-items:center;gap:11px;font-size:14px;color:#14284c;font-weight:500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c879b" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01"></path></svg>Yordam</span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 15px"><span style="display:flex;align-items:center;gap:11px;font-size:14px;color:#14284c;font-weight:500"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c879b" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg>Ilova haqida</span><span style="font-size:13px;color:#9aa4b6">v1.0.0</span></div>
+          </div>
+          <button style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:#d84a4a;border:1px solid #f3d6d6;border-radius:15px;padding:14px;font-size:14.5px;font-weight:700;font-family:inherit;cursor:pointer"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#d84a4a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"></path></svg>Chiqish</button>
+        </div>
+      </sc-if>
+
+      <!-- ============ HELP ============ -->
+      <sc-if value="{{ isHelp }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Yordam" style="opacity:1">
+          <div style="display:flex;align-items:center;padding:2px 16px 14px;position:relative;min-height:34px"><button onclick="{{ h.back }}" style="background:#fff;border:1px solid #e9edf4;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><div style="position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:700;color:#14284c;pointer-events:none">Yordam</div></div>
+          <div style="padding:6px 18px 30px">
+            <div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:11px">Tezkor yordam</div>
+            <div style="display:flex;flex-direction:column;gap:11px;margin-bottom:22px">
+              <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="width:40px;height:40px;border-radius:12px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3M12 17h.01"></path></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c">Ko'p so'raladigan savollar</div><div style="font-size:11.5px;color:#8b94a6;margin-top:1px">Eng mashhur savollarga javoblar</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></div>
+              <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="width:40px;height:40px;border-radius:12px;background:#f0ecfb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#7c5cd6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c">Video qo'llanmalar</div><div style="font-size:11.5px;color:#8b94a6;margin-top:1px">Qadam-baqadam video darsliklar</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></div>
+              <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="width:40px;height:40px;border-radius:12px;background:#e9f6ee;display:flex;align-items:center;justify-content:center;flex:none"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6 19.8 19.8 0 01-3-8.6A2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .4 1.9.7 2.8a2 2 0 01-.5 2.1L8.1 9.9a16 16 0 006 6l1.3-1.3a2 2 0 012.1-.5c.9.3 1.8.6 2.8.7a2 2 0 011.7 2z"></path></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c">Biz bilan bog'lanish</div><div style="font-size:11.5px;color:#8b94a6;margin-top:1px">Savolingiz bormi? Yordam beramiz.</div></div><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></div>
+            </div>
+            <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:15px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4M12 8h.01"></path></svg><div><div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:3px">Muhim eslatma</div><div style="font-size:12px;color:#6a7689;line-height:1.55">Hisob-kitoblar axborot-tahliliy yordam sifatida shakllantirilgan. Yakuniy qaror vakolatli organ tomonidan tasdiqlanadi.</div></div></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ TARIFFS ============ -->
+      <sc-if value="{{ isTariffs }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Tarif tanlash" style="opacity:1">
+          <div style="display:flex;align-items:center;padding:2px 16px 14px;position:relative;min-height:34px"><button onclick="{{ h.back }}" style="background:#fff;border:1px solid #e9edf4;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><div style="position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:700;color:#14284c;pointer-events:none">Tarif tanlash</div></div>
+          <div style="padding:6px 18px 30px">
+            <p style="font-size:13.5px;color:#7c879b;margin:0 0 18px">O'z ehtiyojingizga mos tarifni tanlang</p>
+            <div style="display:flex;flex-direction:column;gap:13px">
+              <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:15px;font-weight:800;color:#14284c">Bepul</span><span style="font-size:15px;font-weight:800;color:#14284c">0 so'm<span style="font-size:12px;color:#9aa4b6;font-weight:500"> / oy</span></span></div><div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:#6a7689"><span style="display:flex;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Kuniga 30 ta so'rov</span><span style="display:flex;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Asosiy qidiruv</span></div></div>
+              <div style="background:#fff;border:2px solid #1ca354;border-radius:16px;padding:17px;position:relative"><span style="position:absolute;top:-11px;right:16px;background:#1ca354;color:#fff;font-size:11px;font-weight:800;padding:4px 11px;border-radius:9px">Ommabop</span><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:15px;font-weight:800;color:#14284c">Standart</span><span style="font-size:15px;font-weight:800;color:#14284c">79 000 so'm<span style="font-size:12px;color:#9aa4b6;font-weight:500"> / oy</span></span></div><div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:#6a7689"><span style="display:flex;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Cheksiz so'rov</span><span style="display:flex;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Excel yuklash · Rasm orqali</span><span style="display:flex;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>24/7 qo'llab-quvvatlash</span></div><button style="width:100%;background:#14284c;color:#fff;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:14px">Tanlash</button></div>
+              <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:15px;font-weight:800;color:#14284c;display:flex;align-items:center;gap:6px">Pro <span style="font-size:15px">👑</span></span><span style="font-size:15px;font-weight:800;color:#14284c">149 000 so'm<span style="font-size:12px;color:#9aa4b6;font-weight:500"> / oy</span></span></div><div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:#6a7689"><span style="display:flex;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Barcha Standart imkoniyatlar</span><span style="display:flex;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Kengaytirilgan statistika · API</span></div></div>
+              <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px"><span style="font-size:15px;font-weight:800;color:#14284c">Korporativ</span><span style="font-size:13px;font-weight:700;color:#9aa4b6">Kelishilgan</span></div><div style="display:flex;flex-direction:column;gap:7px;font-size:12.5px;color:#6a7689"><span style="display:flex;gap:7px"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>Maxsus yechimlar · Dedicated menejer</span></div><button style="width:100%;background:#fff;color:#14284c;border:1px solid #d9e0ec;border-radius:12px;padding:13px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:14px">Bog'lanish</button></div>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ HISOBLASHLAR ============ -->
+      <sc-if value="{{ isHisob }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Hisoblashlar" style="padding:6px 18px 110px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 16px">Hisoblashlarim</h1>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <div onclick="{{ h.final }}" style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px;cursor:pointer"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:14.5px;font-weight:700;color:#14284c">Noutbuk (Laptop)</span><span style="background:#e6f6ec;color:#1a8c44;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px">Past</span></div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:#9aa4b6;font-family:monospace">8471.30.000 0</span><span style="font-size:13px;font-weight:700;color:#14284c">3 456 780 so'm</span></div><div style="font-size:11px;color:#b3bdcd;margin-top:5px">22.05.2025 · 10:45</div></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:14.5px;font-weight:700;color:#14284c">Smartfon</span><span style="background:#fef3e6;color:#c9821a;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px">O'rta</span></div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:#9aa4b6;font-family:monospace">8517.12.000 0</span><span style="font-size:13px;font-weight:700;color:#14284c">2 187 450 so'm</span></div><div style="font-size:11px;color:#b3bdcd;margin-top:5px">22.05.2025 · 09:21</div></div>
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px"><span style="font-size:14.5px;font-weight:700;color:#14284c">Elektr soat</span><span style="background:#e6f6ec;color:#1a8c44;font-size:11px;font-weight:800;padding:3px 8px;border-radius:7px">Past</span></div><div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12px;color:#9aa4b6;font-family:monospace">9102.12.000 0</span><span style="font-size:13px;font-weight:700;color:#14284c">288 000 so'm</span></div><div style="font-size:11px;color:#b3bdcd;margin-top:5px">21.05.2025 · 16:08</div></div>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ SAQLANGAN ============ -->
+      <sc-if value="{{ isSaqlangan }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Saqlangan" style="padding:6px 18px 110px;opacity:1;min-height:70%">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 16px">Saqlangan</h1>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 24px;text-align:center"><div style="width:72px;height:72px;border-radius:50%;background:#eef2fb;display:flex;align-items:center;justify-content:center;margin-bottom:18px"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#9bb4d6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg></div><div style="font-size:16px;font-weight:700;color:#14284c;margin-bottom:7px">Hozircha bo'sh</div><div style="font-size:13px;color:#8b94a6;line-height:1.55;max-width:240px">Hisob-kitoblarni saqlab, ularni bu yerda tezda toping.</div></div>
+        </div>
+      </sc-if>
+
+      </div>
+      <!-- ============ /SCROLL AREA ============ -->
+
+      <!-- ============ BOTTOM NAV ============ -->
+      <sc-if value="{{ showBottomNav }}" hint-placeholder-val="{{ false }}">
+        <div style="flex:none;display:flex;background:#fff;border-top:1px solid #ebeef4;padding:9px 8px 24px;position:relative;z-index:15">
+          <button onclick="{{ h.dash }}" style="flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;font-family:inherit;color: {{ navAsosiy }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"></path></svg><span style="font-size:10.5px;font-weight:600">Asosiy</span></button>
+          <button onclick="{{ h.hisob }}" style="flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;font-family:inherit;color: {{ navHisob }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"></rect><path d="M8 6h8M8 10h8M8 14h5"></path></svg><span style="font-size:10.5px;font-weight:600">Hisoblashlar</span></button>
+          <button onclick="{{ h.saqlangan }}" style="flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;font-family:inherit;color: {{ navSaqlangan }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"></path></svg><span style="font-size:10.5px;font-weight:600">Saqlangan</span></button>
+          <button onclick="{{ h.profile }}" style="flex:1;background:none;border:none;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;font-family:inherit;color: {{ navProfil }}"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"></circle><path d="M4 21v-1a6 6 0 016-6h4a6 6 0 016 6v1"></path></svg><span style="font-size:10.5px;font-weight:600">Profil</span></button>
+        </div>
+      </sc-if>
+</div>
+  </template>
+
+  <script src="assets/js/dekla.js" defer></script>
 </body>
 </html>
