@@ -9,13 +9,36 @@
   /* ---------------- App state & logic ---------------- */
   var state = {
     screen: "splash", stack: [], onb: 0, cert: false,
-    invoice: 10000, transport: 800, insurance: 200, other: 150, rate: 12600
+    invoice: 10000, transport: 800, insurance: 200, other: 150, rate: 12600,
+    q: "", results: [], selected: null, tiftnLoading: false
   };
 
   function setState(patch) {
     var p = (typeof patch === "function") ? patch(state) : patch;
     Object.assign(state, p);
     render();
+  }
+
+  /* ---------------- TIFTN database search ---------------- */
+  function tiftnReady() { return window.TifTn && window.TifTn.isReady(); }
+
+  function runSearch(q) {
+    if (!q || !q.trim()) { setState({ q: q, results: [] }); return; }
+    if (tiftnReady()) {
+      setState({ q: q, results: window.TifTn.search(q, 30) });
+      return;
+    }
+    setState({ q: q, tiftnLoading: true });
+    if (window.TifTn) {
+      window.TifTn.load().then(function () {
+        setState({ tiftnLoading: false, results: window.TifTn.search(state.q, 30) });
+      }).catch(function () { setState({ tiftnLoading: false }); });
+    }
+  }
+
+  function selectCode(code) {
+    var sel = tiftnReady() ? window.TifTn.get(code) : { code: code };
+    setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) }; });
   }
 
   function fmt(n) {
@@ -64,6 +87,39 @@
     var navColor = function (t) { return sc === t ? "#14284c" : "#9aa4b6"; };
     var dot = function (i) { return s.onb === i ? "#1ca354" : "#cfd7e3"; };
 
+    // ---- TIFTN search results (with per-row pick handlers) ----
+    var pickOf = function (code) { return function () { selectCode(code); }; };
+    var results = (s.results || []).map(function (r) {
+      return { code: r.code, name: r.name, path: r.path, unit: r.unit || "—",
+        chapterTitle: r.chapterTitle || "", pick: pickOf(r.code) };
+    });
+    var hasQuery = !!(s.q && s.q.trim());
+
+    // ---- selected code (TIFTN result screen) ----
+    var sel = s.selected;
+    var selCode = sel ? sel.code : "8471.30.000 0";
+    var selName = sel ? sel.name : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar";
+    var selDesc = sel
+      ? (sel.name + (sel.chapterTitle ? " · " + sel.chapterTitle : ""))
+      : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar; ularning bloklari; magnit yoki optik o'quv qurilmalari.";
+    var selUnit = sel ? (sel.unit || "—") : "—";
+
+    // ---- alternative codes (real siblings under the same heading) ----
+    var altPct = ["94%", "78%", "64%", "52%", "43%"];
+    var altBg = ["#e6f6ec", "#e6f6ec", "#fef0e0", "#fef0e0", "#fdeaea"];
+    var altColor = ["#1a8c44", "#1a8c44", "#c9821a", "#c9821a", "#d84a4a"];
+    var alts = [];
+    if (sel && tiftnReady()) {
+      var sibs = window.TifTn.siblings(sel.code, 4);
+      alts.push({ code: sel.code, name: sel.name, pct: "94%", bg: "#e6f6ec", color: "#1a8c44",
+        rowBg: "#f3fbf6", pick: pickOf(sel.code) });
+      for (var ai = 0; ai < sibs.length; ai++) {
+        alts.push({ code: sibs[ai].code, name: sibs[ai].name, pct: altPct[ai + 1] || "40%",
+          bg: altBg[ai + 1] || "#fdeaea", color: altColor[ai + 1] || "#d84a4a",
+          rowBg: "#ffffff", pick: pickOf(sibs[ai].code) });
+      }
+    }
+
     return {
       isSplash: sc === "splash", isLogin: sc === "login", isSms: sc === "sms", isOnb: sc === "onb",
       isDash: sc === "dash", isTezkor: sc === "tezkor", isNew: sc === "new", isProduct: sc === "product",
@@ -87,7 +143,14 @@
       jamiUzsStr: fmt(jamiUzs), jamiUsdStr: fmtUsd(jamiUzs / (s.rate || 1)),
       payments: payments,
       navAsosiy: navColor("dash"), navHisob: navColor("hisob"), navSaqlangan: navColor("saqlangan"), navProfil: navColor("profile"),
+      // TIFTN search
+      q: s.q || "", results: results, hasResults: results.length > 0,
+      tiftnLoading: s.tiftnLoading, showRecents: !hasQuery && !s.tiftnLoading,
+      noResults: hasQuery && !s.tiftnLoading && results.length === 0,
+      selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
+      alts: alts, hasAlts: alts.length > 0,
       h: {
+        onSearch: function (e) { runSearch(e.target.value); },
         back: back, nextOnb: nextOnb, toggleCert: function () { setState(function (p) { return { cert: !p.cert }; }); },
         splash: go("splash"), login: go("login"), sms: go("sms"), onb: go("onb"), dash: go("dash"),
         tezkor: go("tezkor"), new: go("new"), product: go("product"), image: go("image"), excel: go("excel"),
