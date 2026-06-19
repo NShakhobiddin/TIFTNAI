@@ -45,9 +45,16 @@ index.html               # page shell + the design template (inert <template>)
 assets/css/app.css        # full-screen layout, fonts, animations
 assets/js/dekla.js        # template engine + app state & customs logic
 assets/js/tiftn.js        # TIFTN search: transliteration, search, code lookup
-assets/data/tiftn_index.js  # compact code index (12 302 codes)
+assets/data/tiftn_index.js  # compact runtime code index (12 302 terminal codes)
 assets/data/tiftn_meta.js   # chapter/section notes, exclusions, OPI, units
+data/tiftn_tree.json        # full source tree — all 20 652 nodes (16 377 codes)
 ```
+
+`data/tiftn_tree.json` is the complete, authoritative nomenclature tree
+(chapters → headings → subheadings → national codes, with parent links and full
+paths). The compact runtime index in `assets/data/` is derived from it; the full
+tree is kept in the repo as the source of truth and for future features such as
+browsing the hierarchy or looking up non-terminal codes.
 
 > Data source: Decree of the President of the Republic of Uzbekistan No. PQ-181
 > (14 May 2025), Annex 1 — TIFTN classification code list.
