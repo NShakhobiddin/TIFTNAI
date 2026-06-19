@@ -15,12 +15,13 @@ screens fill the viewport like a real mobile app.
   upload, AI questions, TIFTN result, alternative codes, value & costs, customs
   payments, permits & certificates, risk assessment, final result, profile,
   help, plans, calculations and saved items.
-- **Real TIFTN database search** — the full PQ-181 (2025) nomenclature: 12 302
-  ten-digit codes. Type a product name or a code and get instant results.
-  Works in **both Latin and Cyrillic** (e.g. `paxta` finds `пахта`) via
-  transliteration. Picking a result fills the TIFTN result screen with the real
-  code, description and **real alternative codes** (siblings under the same
-  heading).
+- **Real TIFTN database search** — the full PQ-181 (2025) nomenclature.
+  Search runs across **all 16 377 codes** — headings (4-digit), subheadings
+  (6-digit) and national codes (10-digit) — not just the final codes. Type a
+  product name or a code and get instant results. Works in **both Latin and
+  Cyrillic** (e.g. `paxta` finds `пахта`) via transliteration. Picking a result
+  fills the TIFTN result screen with the real code, description and **real
+  alternative codes** (final/terminal siblings under the same heading).
 - **Live customs calculator** — CIP value, customs duty (5% / 0% with an ST-1
   certificate toggle), VAT (15%), customs and processing fees are recomputed
   instantly as you type.
@@ -45,7 +46,7 @@ index.html               # page shell + the design template (inert <template>)
 assets/css/app.css        # full-screen layout, fonts, animations
 assets/js/dekla.js        # template engine + app state & customs logic
 assets/js/tiftn.js        # TIFTN search: transliteration, search, code lookup
-assets/data/tiftn_index.js  # compact runtime code index (12 302 terminal codes)
+assets/data/tiftn_index.js  # compact runtime code index (all 16 377 codes)
 assets/data/tiftn_meta.js   # chapter/section notes, exclusions, OPI, units
 data/tiftn_tree.json        # full source tree — all 20 652 nodes (16 377 codes)
 ```

@@ -97,6 +97,7 @@
       chapter: e[2],
       chapterTitle: chapterTitle(e[2]),
       heading: digits(e[0]).slice(0, 4),
+      terminal: e[4] === 1,
       _i: j
     };
   }
@@ -163,7 +164,7 @@
     var self = digits(code), head = self.slice(0, 4), out = [];
     for (var j = 0; j < idx.e.length && out.length < limit; j++) {
       var e = idx.e[j], cd = digits(e[0]);
-      if (cd.slice(0, 4) === head && cd !== self) out.push(shape(e, j));
+      if (e[4] === 1 && cd.slice(0, 4) === head && cd !== self) out.push(shape(e, j));
     }
     return out;
   }
