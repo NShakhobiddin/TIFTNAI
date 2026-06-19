@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Dekla AI — your intelligent assistant for work, study and everyday life. Chat, create and get things done faster." />
+  <meta name="theme-color" content="#0b0b14" />
+  <title>Dekla AI — Your intelligent assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <!-- Animated background -->
+  <div class="bg-orbs" aria-hidden="true">
+    <span class="orb orb--1"></span>
+    <span class="orb orb--2"></span>
+    <span class="orb orb--3"></span>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header" id="header">
+    <div class="container nav">
+      <a href="#" class="brand" aria-label="Dekla AI home">
+        <span class="brand__mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" width="28" height="28" fill="none">
+            <path d="M16 2l3.6 8.4L28 14l-8.4 3.6L16 26l-3.6-8.4L4 14l8.4-3.6L16 2z" fill="url(#g)"/>
+            <defs>
+              <linearGradient id="g" x1="4" y1="2" x2="28" y2="26" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#7c5cff"/><stop offset="1" stop-color="#19c3ff"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </span>
+        <span class="brand__name">Dekla<span>AI</span></span>
+      </a>
+
+      <nav class="nav__links" id="navLinks" aria-label="Primary">
+        <a href="#features">Features</a>
+        <a href="#how">How it works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+
+      <div class="nav__actions">
+        <a href="#chat" class="btn btn--ghost">Sign in</a>
+        <a href="#chat" class="btn btn--primary">Get started</a>
+      </div>
+
+      <button class="nav__toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Hero -->
+    <section class="hero container">
+      <div class="hero__copy">
+        <span class="pill">
+          <span class="pill__dot"></span> New · Dekla AI 2.0 is here
+        </span>
+        <h1 class="hero__title">
+          Meet <span class="grad">Dekla AI</span> — your intelligent everyday assistant
+        </h1>
+        <p class="hero__sub">
+          Ask anything, create faster, and get real answers. Dekla writes, summarizes,
+          plans and codes — right from your pocket. Smart, fast and always on.
+        </p>
+
+        <form class="hero__cta" id="ctaForm" novalidate>
+          <input type="email" id="ctaEmail" class="hero__input" placeholder="Enter your email" autocomplete="email" />
+          <button type="submit" class="btn btn--primary btn--lg">Try for free</button>
+        </form>
+        <p class="hero__note" id="ctaNote">No credit card required · Free 14-day trial</p>
+
+        <div class="hero__stats">
+          <div><strong data-count="2000000">0</strong><span>Active users</span></div>
+          <div><strong data-count="98">0</strong><span>% satisfaction</span></div>
+          <div><strong data-count="40">0</strong><span>+ languages</span></div>
+        </div>
+      </div>
+
+      <!-- Clean phone mockup — no decorative frames in front -->
+      <div class="hero__visual">
+        <div class="phone" id="phone">
+          <div class="phone__screen">
+            <div class="app">
+              <div class="app__bar">
+                <div class="app__avatar" aria-hidden="true">
+                  <svg viewBox="0 0 32 32" width="20" height="20" fill="none">
+                    <path d="M16 2l3.6 8.4L28 14l-8.4 3.6L16 26l-3.6-8.4L4 14l8.4-3.6L16 2z" fill="url(#g2)"/>
+                    <defs><linearGradient id="g2" x1="4" y1="2" x2="28" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#7c5cff"/><stop offset="1" stop-color="#19c3ff"/></linearGradient></defs>
+                  </svg>
+                </div>
+                <div class="app__title">
+                  <strong>Dekla AI</strong>
+                  <span><i class="dot-live"></i> online</span>
+                </div>
+              </div>
+
+              <div class="app__chat" id="appChat" aria-live="polite"></div>
+
+              <div class="app__input">
+                <span class="app__field">Ask Dekla anything…</span>
+                <button class="app__send" aria-label="Send">
+                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M3.4 20.4l17.45-7.48a1 1 0 000-1.84L3.4 3.6a.999.999 0 00-1.39 1.16L4 11l9 1-9 1-1.99 6.24a1 1 0 001.39 1.16z" fill="currentColor"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trusted by -->
+    <section class="logos container" aria-label="Trusted by teams">
+      <p>Trusted by fast-moving teams worldwide</p>
+      <div class="logos__row">
+        <span>Northwind</span><span>Acme Co</span><span>Quantio</span><span>Lumen</span><span>Vertex</span>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section class="section container" id="features">
+      <div class="section__head">
+        <h2>Everything you need in one assistant</h2>
+        <p>Dekla brings powerful AI tools together so you can think, create and ship faster.</p>
+      </div>
+
+      <div class="grid grid--3">
+        <article class="card reveal">
+          <div class="card__ic ic--violet">💬</div>
+          <h3>Natural conversations</h3>
+          <p>Chat like you would with a teammate. Dekla understands context and remembers what matters.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card__ic ic--cyan">⚡</div>
+          <h3>Instant answers</h3>
+          <p>Get accurate, well-structured responses in seconds — from quick facts to deep research.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card__ic ic--pink">✍️</div>
+          <h3>Smart writing</h3>
+          <p>Draft emails, posts and reports. Dekla matches your tone and polishes every word.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card__ic ic--green">🧠</div>
+          <h3>Code & debug</h3>
+          <p>Generate, explain and fix code across 40+ languages with helpful, runnable snippets.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card__ic ic--amber">🔒</div>
+          <h3>Private & secure</h3>
+          <p>Your data is encrypted end-to-end. We never train on your conversations.</p>
+        </article>
+        <article class="card reveal">
+          <div class="card__ic ic--blue">📱</div>
+          <h3>Works everywhere</h3>
+          <p>Web, iOS and Android — your chats sync instantly across all your devices.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="section container" id="how">
+      <div class="section__head">
+        <h2>Get started in three steps</h2>
+        <p>From sign-up to your first answer in under a minute.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal"><span class="step__n">1</span><h3>Create your account</h3><p>Sign up free with email — no card needed.</p></div>
+        <div class="step reveal"><span class="step__n">2</span><h3>Ask anything</h3><p>Type your question or pick a ready-made prompt.</p></div>
+        <div class="step reveal"><span class="step__n">3</span><h3>Get things done</h3><p>Refine, copy and ship your results instantly.</p></div>
+      </div>
+    </section>
+
+    <!-- Pricing -->
+    <section class="section container" id="pricing">
+      <div class="section__head">
+        <h2>Simple, transparent pricing</h2>
+        <p>Start free. Upgrade when you're ready.</p>
+      </div>
+
+      <div class="toggle" role="group" aria-label="Billing period">
+        <button class="toggle__btn is-active" data-plan="monthly">Monthly</button>
+        <button class="toggle__btn" data-plan="yearly">Yearly <em>−20%</em></button>
+      </div>
+
+      <div class="grid grid--3 pricing">
+        <article class="plan reveal">
+          <h3>Free</h3>
+          <p class="plan__price"><span class="amount" data-monthly="0" data-yearly="0">$0</span><small>/mo</small></p>
+          <p class="plan__desc">For getting started.</p>
+          <ul>
+            <li>20 messages / day</li>
+            <li>Standard model</li>
+            <li>Web access</li>
+          </ul>
+          <a href="#chat" class="btn btn--ghost btn--block">Start free</a>
+        </article>
+
+        <article class="plan plan--featured reveal">
+          <span class="plan__badge">Most popular</span>
+          <h3>Pro</h3>
+          <p class="plan__price"><span class="amount" data-monthly="12" data-yearly="9">$12</span><small>/mo</small></p>
+          <p class="plan__desc">For power users & creators.</p>
+          <ul>
+            <li>Unlimited messages</li>
+            <li>Advanced model</li>
+            <li>Priority speed</li>
+            <li>File uploads</li>
+          </ul>
+          <a href="#chat" class="btn btn--primary btn--block">Go Pro</a>
+        </article>
+
+        <article class="plan reveal">
+          <h3>Team</h3>
+          <p class="plan__price"><span class="amount" data-monthly="29" data-yearly="23">$29</span><small>/mo</small></p>
+          <p class="plan__desc">For growing teams.</p>
+          <ul>
+            <li>Everything in Pro</li>
+            <li>Shared workspaces</li>
+            <li>Admin controls</li>
+            <li>SSO & support</li>
+          </ul>
+          <a href="#chat" class="btn btn--ghost btn--block">Contact sales</a>
+        </article>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section container" id="faq">
+      <div class="section__head">
+        <h2>Frequently asked questions</h2>
+        <p>Everything else you might want to know.</p>
+      </div>
+      <div class="faq">
+        <details class="faq__item"><summary>Is Dekla AI free to use?<span class="faq__plus"></span></summary><p>Yes. The Free plan lets you send up to 20 messages a day with no credit card. Upgrade anytime for unlimited use.</p></details>
+        <details class="faq__item"><summary>Which devices are supported?<span class="faq__plus"></span></summary><p>Dekla works in any modern browser and has native iOS and Android apps. Your chats sync across all of them automatically.</p></details>
+        <details class="faq__item"><summary>Is my data private?<span class="faq__plus"></span></summary><p>Absolutely. Conversations are encrypted, and we never use your data to train our models.</p></details>
+        <details class="faq__item"><summary>Can I cancel anytime?<span class="faq__plus"></span></summary><p>Yes — there are no contracts. Cancel in one click and you keep access until the end of your billing period.</p></details>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-band container" id="chat">
+      <div class="cta-band__inner reveal">
+        <h2>Ready to think faster with Dekla?</h2>
+        <p>Join over 2 million people getting more done with AI.</p>
+        <form class="hero__cta hero__cta--center" id="ctaForm2" novalidate>
+          <input type="email" id="ctaEmail2" class="hero__input" placeholder="Enter your email" autocomplete="email" />
+          <button type="submit" class="btn btn--primary btn--lg">Get started free</button>
+        </form>
+        <p class="hero__note" id="ctaNote2">Free 14-day trial · Cancel anytime</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__grid">
+      <div class="footer__brand">
+        <a href="#" class="brand">
+          <span class="brand__mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" width="24" height="24" fill="none"><path d="M16 2l3.6 8.4L28 14l-8.4 3.6L16 26l-3.6-8.4L4 14l8.4-3.6L16 2z" fill="url(#g3)"/><defs><linearGradient id="g3" x1="4" y1="2" x2="28" y2="26" gradientUnits="userSpaceOnUse"><stop stop-color="#7c5cff"/><stop offset="1" stop-color="#19c3ff"/></linearGradient></defs></svg>
+          </span>
+          <span class="brand__name">Dekla<span>AI</span></span>
+        </a>
+        <p>Your intelligent everyday assistant.</p>
+      </div>
+      <div class="footer__col"><h4>Product</h4><a href="#features">Features</a><a href="#pricing">Pricing</a><a href="#how">How it works</a></div>
+      <div class="footer__col"><h4>Company</h4><a href="#">About</a><a href="#">Blog</a><a href="#">Careers</a></div>
+      <div class="footer__col"><h4>Legal</h4><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Security</a></div>
+    </div>
+    <div class="container footer__bottom">
+      <span>© <span id="year"></span> Dekla AI. All rights reserved.</span>
+      <div class="footer__social">
+        <a href="#" aria-label="X">𝕏</a>
+        <a href="#" aria-label="GitHub">⌂</a>
+        <a href="#" aria-label="LinkedIn">in</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="assets/js/app.js" defer></script>
+</body>
+</html>
