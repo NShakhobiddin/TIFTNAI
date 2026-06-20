@@ -13,7 +13,9 @@
     q: "", results: [], selected: null, tiftnLoading: false,
     // AI classification
     productName: "", productDesc: "", material: "", usage: "", feature: "",
-    aiLoading: false, aiError: "", aiResult: null
+    aiLoading: false, aiError: "", aiResult: null,
+    // uploads
+    imageFiles: [], excelName: "", excelRows: null, docName: ""
   };
 
   function setState(patch) {
@@ -48,34 +50,142 @@
     setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) }; });
   }
 
-  /* ---------------- AI classification (Claude via Worker) ---------------- */
+  /* ---------------- AI classification (Qwen via Worker) ---------------- */
+  var aiHas = function () { return !!(window.DeklaAI && window.DeklaAI.configured()); };
+
+  // Land on the TIFTN result screen with a classification result.
+  function finishResult(res) {
+    var sel = (tiftnReady() && window.TifTn.get(res.code)) || { code: res.code, name: res.name || "", path: "", chapterTitle: "", unit: "" };
+    sel = Object.assign({}, sel, { confidence: res.confidence, reasoning: res.reasoning });
+    setState(function (p) {
+      return { aiLoading: false, aiResult: res, selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) };
+    });
+  }
+
+  // Best-effort result from the local DB (used when AI is off or fails).
+  function localResult(candidates, note) {
+    var top = candidates[0];
+    var alts = candidates.slice(1, 4).map(function (c, i) {
+      return { code: c.code, confidence: 68 - i * 12, note: c.chapterTitle || c.name };
+    });
+    return {
+      code: top.code, name: top.name, confidence: 76,
+      reasoning: note || "Lokal TIFTN bazasi bo'yicha eng mos kod.",
+      alternatives: alts, _local: true
+    };
+  }
+
+  // Run text classification for a query; AI when configured, else local.
+  function classifyQuery(query, product) {
+    var candidates = tiftnReady() ? window.TifTn.search(query, 20) : [];
+    if (!candidates.length) { setState({ aiLoading: false, aiError: "Mos kod topilmadi. Boshqacha yozib ko'ring." }); return; }
+    if (!aiHas()) { finishResult(localResult(candidates)); return; }
+    window.DeklaAI.classify(product, candidates, window.TifTn.opi())
+      .then(finishResult)
+      .catch(function (e) {
+        console.warn("[Dekla] AI fallback:", e && e.message);
+        finishResult(localResult(candidates, "Lokal baza bo'yicha (AI ulanmadi: " + (e && e.message || "xato") + ")."));
+      });
+  }
+
   function runAI() {
     var name = (state.productName || "").trim();
     var desc = (state.productDesc || "").trim();
     if (!name && !desc) { setState({ aiError: "Avval tovar nomini kiriting." }); return; }
-    if (!(window.DeklaAI && window.DeklaAI.configured())) {
-      setState({ aiError: "AI server sozlanmagan. index.html da Worker manzilini kiriting." }); return;
-    }
-
     setState({ aiLoading: true, aiError: "" });
-
-    var go = function () {
-      var query = [name, desc, state.material].filter(Boolean).join(" ");
-      var candidates = window.TifTn.search(query, 20);
-      var product = { name: name, desc: desc, material: state.material || "", usage: state.usage || "" };
-      window.DeklaAI.classify(product, candidates, window.TifTn.opi()).then(function (res) {
-        var sel = window.TifTn.get(res.code) || { code: res.code, name: "", path: "", chapterTitle: "", unit: "" };
-        sel = Object.assign({}, sel, { confidence: res.confidence, reasoning: res.reasoning });
-        setState(function (p) {
-          return { aiLoading: false, aiResult: res, selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) };
-        });
-      }).catch(function (e) {
-        setState({ aiLoading: false, aiError: e.message || "AI xatosi yuz berdi." });
-      });
-    };
-
+    var query = [name, desc, state.material].filter(Boolean).join(" ");
+    var product = { name: name, desc: desc, material: state.material || "", usage: state.usage || "" };
+    var go = function () { classifyQuery(query, product); };
     if (tiftnReady()) go();
     else window.TifTn.load().then(go).catch(function () { setState({ aiLoading: false, aiError: "TIFTN bazasi yuklanmadi." }); });
+  }
+
+  /* ---------------- File uploads ---------------- */
+  function openPicker(accept, multiple, cb) {
+    var inp = document.createElement("input");
+    inp.type = "file"; inp.accept = accept; inp.multiple = !!multiple;
+    inp.style.position = "fixed"; inp.style.left = "-9999px";
+    inp.addEventListener("change", function () {
+      var files = inp.files;
+      if (inp.parentNode) inp.parentNode.removeChild(inp);
+      if (files && files.length) cb(files);
+    });
+    document.body.appendChild(inp);
+    inp.click();
+  }
+
+  function pickImage() {
+    openPicker("image/*", true, function (files) { setState({ imageFiles: [].slice.call(files), aiError: "" }); });
+  }
+  function pickExcel() {
+    openPicker(".xlsx,.xls,.csv", false, function (files) {
+      setState({ excelName: files[0].name, excelRows: null, aiError: "", _excelFile: files[0] });
+    });
+  }
+  function pickDoc() {
+    openPicker(".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx", false, function (files) {
+      setState({ docName: files[0].name, aiError: "" });
+    });
+  }
+
+  // Image → vision describe → classify
+  function runImageAI() {
+    if (!state.imageFiles || !state.imageFiles.length) { setState({ aiError: "Avval rasm tanlang." }); return; }
+    if (!aiHas()) { setState({ aiError: "Rasm tahlili uchun AI server (Worker) ulanishi kerak." }); return; }
+    setState({ aiLoading: true, aiError: "" });
+    var go = function () {
+      window.DeklaAI.describeImage(state.imageFiles).then(function (d) {
+        classifyQuery(d.keywords || d.name, { name: d.name, desc: "rasm orqali aniqlangan", material: "", usage: "" });
+      }).catch(function (e) {
+        setState({ aiLoading: false, aiError: e && e.message || "Rasm tahlili xatosi." });
+      });
+    };
+    if (tiftnReady()) go(); else window.TifTn.load().then(go).catch(function () { setState({ aiLoading: false, aiError: "TIFTN bazasi yuklanmadi." }); });
+  }
+
+  // Excel/CSV → parse first product row → classify
+  function loadXlsx() {
+    if (window.XLSX) return Promise.resolve(window.XLSX);
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
+      s.onload = function () { window.XLSX ? resolve(window.XLSX) : reject(new Error("XLSX yuklanmadi")); };
+      s.onerror = function () { reject(new Error("XLSX kutubxonasini yuklab bo'lmadi (internet).")); };
+      document.head.appendChild(s);
+    });
+  }
+
+  function firstProductName(rows) {
+    if (!rows || !rows.length) return "";
+    var headerKeys = Object.keys(rows[0] || {});
+    var nameKey = headerKeys.filter(function (k) { return /(nom|tovar|mahsulot|name|product|tavsif|desc)/i.test(k); })[0];
+    for (var i = 0; i < rows.length; i++) {
+      var r = rows[i];
+      var v = nameKey ? r[nameKey] : null;
+      if (!v) { for (var j = 0; j < headerKeys.length; j++) { if (typeof r[headerKeys[j]] === "string" && r[headerKeys[j]].trim()) { v = r[headerKeys[j]]; break; } } }
+      if (v && String(v).trim()) return String(v).trim();
+    }
+    return "";
+  }
+
+  function runExcelAI() {
+    var file = state._excelFile;
+    if (!file) { setState({ aiError: "Avval Excel fayl tanlang." }); return; }
+    setState({ aiLoading: true, aiError: "" });
+    loadXlsx().then(function (XLSX) {
+      return file.arrayBuffer().then(function (buf) {
+        var wb = XLSX.read(buf, { type: "array" });
+        var sheet = wb.Sheets[wb.SheetNames[0]];
+        var rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+        var name = firstProductName(rows);
+        if (!name) throw new Error("Excelda tovar nomi ustuni topilmadi.");
+        setState({ excelRows: rows.length });
+        var run = function () { classifyQuery(name, { name: name, desc: "Excel fayldan", material: "", usage: "" }); };
+        tiftnReady() ? run() : window.TifTn.load().then(run);
+      });
+    }).catch(function (e) {
+      setState({ aiLoading: false, aiError: e && e.message || "Excelni o'qib bo'lmadi." });
+    });
   }
 
   function fmt(n) {
@@ -213,6 +323,17 @@
       productName: s.productName || "",
       aiLoading: s.aiLoading, aiError: s.aiError || "", hasAiError: !!s.aiError,
       aiBtn: s.aiLoading ? "AI tahlil qilmoqda…" : "AI bilan aniqlash",
+      // uploads
+      imageHint: (s.imageFiles && s.imageFiles.length)
+        ? (s.imageFiles.length + " ta rasm tanlandi — tahlilga tayyor")
+        : "JPG, PNG, WEBP · bosing va rasm tanlang",
+      imageBtn: s.aiLoading ? "Tahlil qilinmoqda…" : "Rasm bo'yicha aniqlash",
+      excelDisp: s.excelName || "Excel fayl tanlash",
+      excelHint: s.excelName
+        ? (s.excelRows != null ? (s.excelRows + " qator topildi") : "Tanlandi — bosing: Davom etish")
+        : "Bosing va .xlsx / .csv faylni tanlang",
+      excelBtn: s.aiLoading ? "Tahlil qilinmoqda…" : "Tahlil qilish",
+      docDisp: s.docName || "",
       h: {
         onSearch: function (e) { runSearch(e.target.value); },
         onProductName: function (e) { setSilent({ productName: e.target.value }); },
@@ -220,7 +341,8 @@
         onMaterial: function (e) { setSilent({ material: e.target.value }); },
         onUsage: function (e) { setSilent({ usage: e.target.value }); },
         onFeature: function (e) { setSilent({ feature: e.target.value }); },
-        runAI: runAI,
+        runAI: runAI, runImageAI: runImageAI, runExcelAI: runExcelAI,
+        pickImage: pickImage, pickExcel: pickExcel, pickDoc: pickDoc,
         back: back, nextOnb: nextOnb, toggleCert: function () { setState(function (p) { return { cert: !p.cert }; }); },
         splash: go("splash"), login: go("login"), sms: go("sms"), onb: go("onb"), dash: go("dash"),
         tezkor: go("tezkor"), new: go("new"), product: go("product"), image: go("image"), excel: go("excel"),

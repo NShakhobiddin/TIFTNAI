@@ -117,5 +117,65 @@
     });
   }
 
-  window.DeklaAI = { classify: classify, configured: configured, endpoint: endpoint, model: MODEL };
+  /* ---- image (vision) → product description, via qwen-vl ---- */
+  var VL_MODEL = "qwen-vl-max";
+
+  function fileToDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      var fr = new FileReader();
+      fr.onload = function () { resolve(fr.result); };
+      fr.onerror = function () { reject(new Error("Rasmni o'qib bo'lmadi.")); };
+      fr.readAsDataURL(file);
+    });
+  }
+
+  // Look at the photo(s) and return {name, keywords} to feed the text classifier.
+  function describeImage(files) {
+    if (!configured()) return Promise.reject(new Error("AI server (Cloudflare Worker) sozlanmagan."));
+    if (!files || !files.length) return Promise.reject(new Error("Rasm tanlanmagan."));
+
+    var pics = [].slice.call(files).slice(0, 2);
+    return Promise.all(pics.map(fileToDataUrl)).then(function (urls) {
+      var content = [{
+        type: "text",
+        text: "Rasm(lar)dagi asosiy tovarni aniqla. FAQAT JSON qaytar (boshqa matnsiz): " +
+          "{\"name\":\"<tovarning qisqa nomi, o'zbekcha>\",\"keywords\":\"<TIFTN qidiruvi uchun kalit so'zlar, o'zbekcha>\"}"
+      }];
+      urls.forEach(function (u) { content.push({ type: "image_url", image_url: { url: u } }); });
+
+      var body = {
+        model: VL_MODEL,
+        max_tokens: 256,
+        messages: [{ role: "user", content: content }]
+      };
+      return fetch(endpoint(), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(body)
+      }).catch(function (e) {
+        console.error("[DeklaAI] rasm: tarmoq/CORS xatosi:", e);
+        throw new Error("Server bilan bog'lanib bo'lmadi (tarmoq/CORS).");
+      }).then(function (r) {
+        return r.text().then(function (raw) {
+          var data; try { data = JSON.parse(raw); } catch (e) { data = null; }
+          if (!r.ok) {
+            var msg = (data && data.error && (data.error.message || data.error)) || raw;
+            console.error("[DeklaAI] rasm server xatosi", r.status, raw);
+            throw new Error("HTTP " + r.status + ": " + (typeof msg === "string" ? msg : JSON.stringify(msg)));
+          }
+          var c = data && data.choices && data.choices[0];
+          var txt = c && c.message && c.message.content;
+          var parsed = extractJson(txt) || {};
+          var name = parsed.name || parsed.keywords || "";
+          if (!name) { console.error("[DeklaAI] rasm: nomi topilmadi:", txt); throw new Error("Rasmdan tovar aniqlanmadi."); }
+          return { name: name, keywords: parsed.keywords || name };
+        });
+      });
+    });
+  }
+
+  window.DeklaAI = {
+    classify: classify, describeImage: describeImage,
+    configured: configured, endpoint: endpoint, model: MODEL, vlModel: VL_MODEL
+  };
 })();

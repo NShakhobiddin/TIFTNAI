@@ -32,6 +32,17 @@ screens fill the viewport like a real mobile app.
   that holds the Qwen (DashScope) API key as a secret, so the key is never exposed
   client-side. Set your Worker URL via `window.DEKLA_AI_ENDPOINT` in `index.html`
   — see `worker/README.md` for deployment.
+- **Always-on code detection** — classification works even without AI: if the
+  Worker/Qwen is unavailable it falls back to the local TIFTN database and still
+  returns the best-matching code.
+- **Image upload (vision)** — pick product photos; Qwen-VL reads the image,
+  derives a name, and the app classifies it into a TIFTN code.
+- **Excel upload** — pick an `.xlsx`/`.csv`; the app parses it (SheetJS) and
+  classifies the first product row.
+- **Document upload** — pick an invoice / spec / packing-list file (file picker
+  wired; manual continue).
+- **Telegram Mini App** — opens inside a Telegram bot via the WebApp SDK
+  (`assets/js/telegram.js`): expands, themes, and syncs the Back button.
 - **Live customs calculator** — CIP value, customs duty (5% / 0% with an ST-1
   certificate toggle), VAT (15%), customs and processing fees are recomputed
   instantly as you type.
