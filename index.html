@@ -20,16 +20,6 @@
   <!-- Design template (rendered by the runtime) -->
   <template id="app-tpl">
 <div class="app-root" style="background: {{ screenBg }}">
-<!-- status bar -->
-      <div style="height:52px;flex:none;display:flex;align-items:flex-end;justify-content:space-between;padding:0 30px 9px;z-index:20;color: {{ statusColor }}">
-        <span style="font-size:15px;font-weight:700;letter-spacing:.2px">9:41</span>
-        <span style="display:flex;align-items:center;gap:6px">
-          <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"></rect><rect x="5" y="4" width="3" height="8" rx="1"></rect><rect x="10" y="2" width="3" height="10" rx="1"></rect><rect x="15" y="0" width="3" height="12" rx="1"></rect></svg>
-          <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><path d="M8.5 2.5c2.3 0 4.4.9 6 2.4l1.3-1.4C13.9 1.6 11.3.5 8.5.5S3.1 1.6 1.2 3.5L2.5 4.9c1.6-1.5 3.7-2.4 6-2.4z" opacity=".9"></path><path d="M8.5 6c1.2 0 2.3.5 3.1 1.3l1.3-1.4C11.7 4.7 10.2 4 8.5 4s-3.2.7-4.4 1.9l1.3 1.4C6.2 6.5 7.3 6 8.5 6z" opacity=".9"></path><circle cx="8.5" cy="10" r="1.6"></circle></svg>
-          <svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x="1" y="1" width="21" height="11" rx="3" stroke="currentColor" stroke-opacity=".5" stroke-width="1.2"></rect><rect x="2.6" y="2.6" width="16" height="7.8" rx="1.6" fill="currentColor"></rect><rect x="23.4" y="4" width="1.6" height="5" rx="1" fill="currentColor" opacity=".5"></rect></svg>
-        </span>
-      </div>
-
       <!-- shared logo header -->
       <sc-if value="{{ showLogoHeader }}" hint-placeholder-val="{{ false }}">
         <div style="flex:none;display:flex;align-items:center;padding:2px 16px 12px;position:relative;min-height:34px">
@@ -50,7 +40,7 @@
 
       <!-- ============ SPLASH ============ -->
       <sc-if value="{{ isSplash }}" hint-placeholder-val="{{ true }}">
-        <div data-screen-label="Splash" onclick="{{ h.login }}" style="position:absolute;inset:0;margin-top:-52px;padding:118px 30px 40px;display:flex;flex-direction:column;align-items:center;cursor:pointer;background:radial-gradient(120% 80% at 50% 18%,#13315c 0%,#0e2545 55%,#0a1c38 100%);overflow:hidden">
+        <div data-screen-label="Splash" onclick="{{ h.login }}" style="position:absolute;inset:0;padding:118px 30px 40px;display:flex;flex-direction:column;align-items:center;cursor:pointer;background:radial-gradient(120% 80% at 50% 18%,#13315c 0%,#0e2545 55%,#0a1c38 100%);overflow:hidden">
           <div style="position:absolute;bottom:90px;left:0;right:0;height:240px;opacity:.5;background:radial-gradient(60% 100% at 50% 100%,rgba(28,163,84,.22),transparent 70%)"></div>
           <svg style="position:absolute;bottom:120px;left:-10%;width:120%;opacity:.35" height="200" viewBox="0 0 400 200" fill="none"><path d="M0 180 Q200 60 400 180" stroke="#2f6dd0" stroke-width="1.2" opacity=".5"></path><path d="M0 200 Q200 90 400 200" stroke="#1ca354" stroke-width="1.2" opacity=".4"></path><circle cx="120" cy="140" r="2.5" fill="#1ca354"></circle><circle cx="300" cy="120" r="2.5" fill="#3f86e8"></circle><circle cx="220" cy="150" r="2" fill="#1ca354"></circle></svg>
           <div style="display:flex;flex-direction:column;align-items:center;gap:22px;opacity:1;z-index:2">

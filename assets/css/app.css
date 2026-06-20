@@ -18,7 +18,8 @@ button { cursor: pointer; }
 @keyframes dkfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes dkpulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
 
-/* Full-bleed app — the device bezel, dynamic island and canvas frame are removed */
+/* Full-bleed app — no device bezel, no status bar, no frame.
+   Fills the whole screen on every size; only the notch safe-area is reserved. */
 .app-root {
   position: relative;
   display: flex;
@@ -27,29 +28,14 @@ button { cursor: pointer; }
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
-  margin: 0 auto;
+  margin: 0;
+  padding-top: env(safe-area-inset-top, 0px);
 }
+
+/* a little breathing room at the very top so the first header isn't glued to the edge */
+.app-root > :first-child { margin-top: 6px; }
 
 .dk-anim { animation: dkfade .3s ease; }
-
-/* On larger screens, present the app as a centered column (no heavy frame) */
-@media (min-width: 460px) {
-  body {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 100vh;
-    background: radial-gradient(140% 120% at 50% 0%, #1a3a66 0%, #0e2545 55%, #0a1c38 100%);
-    padding: 24px 16px;
-  }
-  .app-root {
-    width: 393px;
-    height: 852px;
-    max-height: calc(100vh - 48px);
-    border-radius: 34px;
-    box-shadow: 0 40px 90px -25px rgba(0, 0, 0, .55);
-  }
-}
 
 /* Loading state before the runtime mounts */
 #app:empty::before {
