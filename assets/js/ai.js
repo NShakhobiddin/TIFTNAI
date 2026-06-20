@@ -57,6 +57,15 @@
     ].join("\n");
   }
 
+  function extractJson(s) {
+    if (!s) return null;
+    var t = String(s).trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+    try { return JSON.parse(t); } catch (e) {}
+    var i = t.indexOf("{"), j = t.lastIndexOf("}");
+    if (i >= 0 && j > i) { try { return JSON.parse(t.slice(i, j + 1)); } catch (e) {} }
+    return null;
+  }
+
   function classify(product, candidates, opi) {
     if (!configured()) return Promise.reject(new Error("AI server (Cloudflare Worker) sozlanmagan."));
     if (!candidates || !candidates.length) return Promise.reject(new Error("Nomzod kodlar topilmadi. Tovar nomini aniqroq kiriting."));
@@ -77,22 +86,33 @@
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body)
+    }).catch(function (e) {
+      // network / CORS failure (TypeError: Failed to fetch)
+      console.error("[DeklaAI] tarmoq/CORS xatosi:", e);
+      throw new Error("Server bilan bog'lanib bo'lmadi (tarmoq yoki CORS). Worker manzili va ALLOWED_ORIGIN ni tekshiring.");
     }).then(function (r) {
-      return r.json().then(function (data) {
+      return r.text().then(function (raw) {
+        var data;
+        try { data = JSON.parse(raw); } catch (e) { data = null; }
         if (!r.ok) {
-          var msg = (data && data.error && (data.error.message || data.error)) || ("HTTP " + r.status);
-          throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
+          var msg = (data && data.error && (data.error.message || data.error)) || raw || ("HTTP " + r.status);
+          console.error("[DeklaAI] server xatosi", r.status, raw);
+          throw new Error("HTTP " + r.status + ": " + (typeof msg === "string" ? msg : JSON.stringify(msg)));
         }
         return data;
       });
     }).then(function (data) {
-      var choice = data.choices && data.choices[0];
+      var choice = data && data.choices && data.choices[0];
       var content = choice && choice.message && choice.message.content;
-      if (!content) throw new Error("Modeldan bo'sh javob keldi.");
-      // strip ```json fences if the model added them
-      var txt = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
-      var parsed;
-      try { parsed = JSON.parse(txt); } catch (e) { throw new Error("Javobni o'qib bo'lmadi."); }
+      if (!content) {
+        console.error("[DeklaAI] kutilmagan javob:", data);
+        throw new Error("Modeldan kutilmagan javob keldi.");
+      }
+      var parsed = extractJson(content);
+      if (!parsed || !parsed.code) {
+        console.error("[DeklaAI] JSON o'qib bo'lmadi. Model javobi:", content);
+        throw new Error("Model javobini o'qib bo'lmadi.");
+      }
       return parsed;
     });
   }
