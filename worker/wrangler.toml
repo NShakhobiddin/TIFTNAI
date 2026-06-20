@@ -2,10 +2,13 @@ name = "dekla-ai"
 main = "worker.js"
 compatibility_date = "2026-01-01"
 
-# Optional: lock the proxy to your site's origin (recommended).
-# Replace with where the app is hosted, e.g. https://nshakhobiddin.github.io
-# [vars]
+[vars]
+# Default Qwen model (override per request with any qwen-* id).
+QWEN_MODEL = "qwen-max"
+# Optional: China-mainland endpoint instead of the international one:
+# UPSTREAM_URL = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+# Optional but recommended: lock the proxy to your site origin, e.g.
 # ALLOWED_ORIGIN = "https://nshakhobiddin.github.io"
 
-# ANTHROPIC_API_KEY is a SECRET — do NOT put it here.
-# Set it with:  npx wrangler secret put ANTHROPIC_API_KEY
+# DASHSCOPE_API_KEY is a SECRET — do NOT put it here.
+# Set it with:  npx wrangler secret put DASHSCOPE_API_KEY

@@ -1,8 +1,9 @@
 /* ============================================================
-   ai.js — Dekla AI: Claude-powered TIFTN classification
-   The browser calls YOUR Cloudflare Worker proxy (not Anthropic
-   directly). The Worker holds the ANTHROPIC_API_KEY as a secret
-   and forwards the request — so the key never reaches the browser.
+   ai.js — Dekla AI: Qwen-powered TIFTN classification
+   Uses Qwen's OpenAI-compatible Chat Completions API.
+   The browser calls YOUR Cloudflare Worker proxy (not DashScope
+   directly); the Worker holds DASHSCOPE_API_KEY as a secret and
+   forwards the request — so the key never reaches the browser.
 
    Configure the endpoint in index.html:
      <script>window.DEKLA_AI_ENDPOINT = "https://your-worker.workers.dev";</script>
@@ -10,54 +11,33 @@
 (function () {
   "use strict";
 
-  var MODEL = "claude-opus-4-8";
-  var PLACEHOLDER = "https://YOUR-WORKER.workers.dev";
+  var MODEL = "qwen-max"; // qwen-max | qwen-plus | qwen-turbo | qwen3-max ...
 
-  function endpoint() {
-    return (window.DEKLA_AI_ENDPOINT || "").trim();
-  }
+  function endpoint() { return (window.DEKLA_AI_ENDPOINT || "").trim(); }
   function configured() {
     var e = endpoint();
     return !!e && e.indexOf("YOUR-WORKER") === -1;
   }
 
-  // Structured-output schema — the model must return exactly this shape.
-  var SCHEMA = {
-    type: "object",
-    properties: {
-      code: { type: "string" },
-      confidence: { type: "integer" },
-      reasoning: { type: "string" },
-      alternatives: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            code: { type: "string" },
-            confidence: { type: "integer" },
-            note: { type: "string" }
-          },
-          required: ["code", "confidence", "note"],
-          additionalProperties: false
-        }
-      }
-    },
-    required: ["code", "confidence", "reasoning", "alternatives"],
-    additionalProperties: false
-  };
+  // Required output shape (described in the prompt; Qwen returns JSON).
+  var SHAPE =
+    '{"code":"<tanlangan kod>","confidence":<0-100>,"reasoning":"<o\'zbekcha asoslash>",' +
+    '"alternatives":[{"code":"<kod>","confidence":<0-100>,"note":"<farqlovchi belgi>"}]}';
 
-  function buildPrompt(product, candidates, opi) {
+  function systemPrompt() {
+    return "Sen O'zbekiston bojxonasi uchun TIF TN (TIFTN) tovar kodlarini tasniflovchi mutaxassissan. " +
+      "Javobni FAQAT quyidagi ko'rinishdagi JSON sifatida qaytar (boshqa matnsiz, kod bloklarisiz): " + SHAPE;
+  }
+
+  function userPrompt(product, candidates, opi) {
     var cand = candidates.map(function (c, i) {
       return (i + 1) + ". " + c.code + " — " + c.name +
         (c.chapterTitle ? " | guruh: " + c.chapterTitle : "") +
         (c.path ? " | kontekst: " + c.path : "");
     }).join("\n");
-
     var opiText = (opi || []).map(function (o) { return o.rule + ") " + o.text; }).join("\n\n");
 
     return [
-      "Sen O'zbekiston bojxonasi uchun TIF TN (TIFTN) tovar kodlarini tasniflovchi mutaxassissan.",
-      "",
       "TOVAR MA'LUMOTI:",
       "Nomi: " + (product.name || "—"),
       "Tavsif: " + (product.desc || "—"),
@@ -70,11 +50,10 @@
       "TIF TN TALQIN ETISHNING ASOSIY QOIDALARI (OPI):",
       opiText,
       "",
-      "VAZIFA: yuqoridagi nomzodlardan tovarga eng mos keladigan BITTA TIFTN kodini OPI qoidalari " +
-      "(ayniqsa 1 va 3(a)/3(b)/3(v)) asosida tanla. Tanlangan 'code' aynan nomzodlar ro'yxatidagi " +
-      "kod bilan bir xil bo'lsin. 'confidence' — 0..100 oralig'ida ishonch darajasi. 'reasoning' — " +
-      "o'zbek tilida (lotin), 1-2 jumlali qisqa asoslash. 'alternatives' — ro'yxatdan 2-4 ta muqobil " +
-      "kod, har biri code/confidence/note (o'zbekcha farqlovchi belgi) bilan. Faqat berilgan nomzod kodlardan foydalan."
+      "VAZIFA: nomzodlardan tovarga eng mos keladigan BITTA TIFTN kodini OPI qoidalari (ayniqsa 1 va " +
+      "3(a)/3(b)/3(v)) asosida tanla. 'code' aynan ro'yxatdagi kod bilan bir xil bo'lsin. 'confidence' — " +
+      "0..100. 'reasoning' — o'zbekcha (lotin), 1-2 jumla. 'alternatives' — ro'yxatdan 2-4 ta muqobil " +
+      "kod (code/confidence/note). Faqat berilgan nomzod kodlardan foydalan. Javob JSON bo'lsin."
     ].join("\n");
   }
 
@@ -82,12 +61,16 @@
     if (!configured()) return Promise.reject(new Error("AI server (Cloudflare Worker) sozlanmagan."));
     if (!candidates || !candidates.length) return Promise.reject(new Error("Nomzod kodlar topilmadi. Tovar nomini aniqroq kiriting."));
 
-    // The Anthropic Messages body — the Worker injects the API key and forwards it.
+    // OpenAI-compatible Chat Completions body — the Worker injects the key & forwards it.
     var body = {
       model: MODEL,
       max_tokens: 1024,
-      output_config: { format: { type: "json_schema", schema: SCHEMA } },
-      messages: [{ role: "user", content: buildPrompt(product, candidates, opi) }]
+      temperature: 0.2,
+      response_format: { type: "json_object" },
+      messages: [
+        { role: "system", content: systemPrompt() },
+        { role: "user", content: userPrompt(product, candidates, opi) }
+      ]
     };
 
     return fetch(endpoint(), {
@@ -97,17 +80,19 @@
     }).then(function (r) {
       return r.json().then(function (data) {
         if (!r.ok) {
-          var msg = (data && data.error && data.error.message) || ("HTTP " + r.status);
-          throw new Error(msg);
+          var msg = (data && data.error && (data.error.message || data.error)) || ("HTTP " + r.status);
+          throw new Error(typeof msg === "string" ? msg : JSON.stringify(msg));
         }
         return data;
       });
     }).then(function (data) {
-      if (data.stop_reason === "refusal") throw new Error("So'rov xavfsizlik sababli rad etildi.");
-      var tb = (data.content || []).filter(function (b) { return b.type === "text"; })[0];
-      if (!tb || !tb.text) throw new Error("Modeldan bo'sh javob keldi.");
+      var choice = data.choices && data.choices[0];
+      var content = choice && choice.message && choice.message.content;
+      if (!content) throw new Error("Modeldan bo'sh javob keldi.");
+      // strip ```json fences if the model added them
+      var txt = content.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
       var parsed;
-      try { parsed = JSON.parse(tb.text); } catch (e) { throw new Error("Javobni o'qib bo'lmadi."); }
+      try { parsed = JSON.parse(txt); } catch (e) { throw new Error("Javobni o'qib bo'lmadi."); }
       return parsed;
     });
   }
