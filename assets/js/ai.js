@@ -1,8 +1,8 @@
 /* ============================================================
-   ai.js — Dekla AI: Qwen-powered TIFTN classification
-   Uses Qwen's OpenAI-compatible Chat Completions API.
-   The browser calls YOUR Cloudflare Worker proxy (not DashScope
-   directly); the Worker holds DASHSCOPE_API_KEY as a secret and
+   ai.js — Dekla AI: Claude-powered TIFTN classification
+   Uses Anthropic's native Messages API (https://docs.claude.com).
+   The browser calls YOUR Cloudflare Worker proxy (not Anthropic
+   directly); the Worker holds ANTHROPIC_API_KEY as a secret and
    forwards the request — so the key never reaches the browser.
 
    Configure the endpoint in index.html:
@@ -11,7 +11,9 @@
 (function () {
   "use strict";
 
-  var MODEL = "qwen-max"; // qwen-max | qwen-plus | qwen-turbo | qwen3-max ...
+  // Default model. Override on the Worker via the CLAUDE_MODEL var
+  // (e.g. claude-haiku-4-5 for cheaper/faster runs).
+  var MODEL = "claude-opus-4-8";
 
   function endpoint() { return (window.DEKLA_AI_ENDPOINT || "").trim(); }
   function configured() {
@@ -19,14 +21,42 @@
     return !!e && e.indexOf("YOUR-WORKER") === -1;
   }
 
-  // Required output shape (described in the prompt; Qwen returns JSON).
-  var SHAPE =
-    '{"code":"<tanlangan kod>","confidence":<0-100>,"reasoning":"<o\'zbekcha asoslash>",' +
-    '"alternatives":[{"code":"<kod>","confidence":<0-100>,"note":"<farqlovchi belgi>"}]}';
+  // ---- Structured-output schemas (Anthropic guarantees valid JSON) ----
+  var RESULT_SCHEMA = {
+    type: "object",
+    properties: {
+      code: { type: "string" },
+      confidence: { type: "integer" },
+      reasoning: { type: "string" },
+      alternatives: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            code: { type: "string" },
+            confidence: { type: "integer" },
+            note: { type: "string" }
+          },
+          required: ["code", "confidence", "note"],
+          additionalProperties: false
+        }
+      }
+    },
+    required: ["code", "confidence", "reasoning", "alternatives"],
+    additionalProperties: false
+  };
+
+  var VISION_SCHEMA = {
+    type: "object",
+    properties: { name: { type: "string" }, keywords: { type: "string" } },
+    required: ["name", "keywords"],
+    additionalProperties: false
+  };
 
   function systemPrompt() {
     return "Sen O'zbekiston bojxonasi uchun TIF TN (TIFTN) tovar kodlarini tasniflovchi mutaxassissan. " +
-      "Javobni FAQAT quyidagi ko'rinishdagi JSON sifatida qaytar (boshqa matnsiz, kod bloklarisiz): " + SHAPE;
+      "Sizga nomzod kodlar ro'yxati beriladi — faqat shu ro'yxatdan tovarga eng mos BITTA kodni tanla, " +
+      "o'ylab kod topma. Tanlovni TIF TN talqin qoidalari (OPI), ayniqsa 1 va 3(a)/3(b)/3(v) asosida amalga oshir.";
   }
 
   function userPrompt(product, candidates, opi) {
@@ -50,13 +80,25 @@
       "TIF TN TALQIN ETISHNING ASOSIY QOIDALARI (OPI):",
       opiText,
       "",
-      "VAZIFA: nomzodlardan tovarga eng mos keladigan BITTA TIFTN kodini OPI qoidalari (ayniqsa 1 va " +
-      "3(a)/3(b)/3(v)) asosida tanla. 'code' aynan ro'yxatdagi kod bilan bir xil bo'lsin. 'confidence' — " +
-      "0..100. 'reasoning' — o'zbekcha (lotin), 1-2 jumla. 'alternatives' — ro'yxatdan 2-4 ta muqobil " +
-      "kod (code/confidence/note). Faqat berilgan nomzod kodlardan foydalan. Javob JSON bo'lsin."
+      "VAZIFA: nomzodlardan tovarga eng mos keladigan BITTA TIFTN kodini tanla. 'code' aynan " +
+      "ro'yxatdagi kod bilan bir xil bo'lsin. 'confidence' — 0..100. 'reasoning' — o'zbekcha (lotin), " +
+      "1-2 jumla. 'alternatives' — ro'yxatdan 2-4 ta muqobil kod (code/confidence/note). Faqat berilgan " +
+      "nomzod kodlardan foydalan."
     ].join("\n");
   }
 
+  // First text block of an Anthropic Messages response.
+  function firstText(data) {
+    var c = data && data.content;
+    if (Array.isArray(c)) {
+      for (var i = 0; i < c.length; i++) {
+        if (c[i] && c[i].type === "text" && c[i].text) return c[i].text;
+      }
+    }
+    return "";
+  }
+
+  // Tolerant JSON reader (structured outputs return clean JSON; this is a safety net).
   function extractJson(s) {
     if (!s) return null;
     var t = String(s).trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
@@ -66,29 +108,13 @@
     return null;
   }
 
-  function classify(product, candidates, opi) {
-    if (!configured()) return Promise.reject(new Error("AI server (Cloudflare Worker) sozlanmagan."));
-    if (!candidates || !candidates.length) return Promise.reject(new Error("Nomzod kodlar topilmadi. Tovar nomini aniqroq kiriting."));
-
-    // OpenAI-compatible Chat Completions body — the Worker injects the key & forwards it.
-    // No `response_format` is sent: not every Qwen model accepts it (it can trigger a
-    // 400), and we already coerce the reply to JSON via extractJson + a strict prompt.
-    var body = {
-      model: MODEL,
-      max_tokens: 1024,
-      temperature: 0.2,
-      messages: [
-        { role: "system", content: systemPrompt() },
-        { role: "user", content: userPrompt(product, candidates, opi) }
-      ]
-    };
-
+  // POST a Messages body to the Worker and return the parsed Anthropic response.
+  function postMessages(body) {
     return fetch(endpoint(), {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body)
     }).catch(function (e) {
-      // network / CORS failure (TypeError: Failed to fetch)
       console.error("[DeklaAI] tarmoq/CORS xatosi:", e);
       throw new Error("Server bilan bog'lanib bo'lmadi (tarmoq yoki CORS). Worker manzili va ALLOWED_ORIGIN ni tekshiring.");
     }).then(function (r) {
@@ -100,31 +126,48 @@
           console.error("[DeklaAI] server xatosi", r.status, raw);
           throw new Error("HTTP " + r.status + ": " + (typeof msg === "string" ? msg : JSON.stringify(msg)));
         }
+        if (data && data.stop_reason === "refusal") {
+          console.error("[DeklaAI] model rad etdi:", data.stop_details);
+          throw new Error("Model so'rovni rad etdi.");
+        }
         return data;
       });
-    }).then(function (data) {
-      var choice = data && data.choices && data.choices[0];
-      var content = choice && choice.message && choice.message.content;
-      if (!content) {
-        console.error("[DeklaAI] kutilmagan javob:", data);
-        throw new Error("Modeldan kutilmagan javob keldi.");
-      }
-      var parsed = extractJson(content);
+    });
+  }
+
+  function classify(product, candidates, opi) {
+    if (!configured()) return Promise.reject(new Error("AI server (Cloudflare Worker) sozlanmagan."));
+    if (!candidates || !candidates.length) return Promise.reject(new Error("Nomzod kodlar topilmadi. Tovar nomini aniqroq kiriting."));
+
+    var body = {
+      model: MODEL,
+      max_tokens: 1024,
+      system: systemPrompt(),
+      messages: [{ role: "user", content: userPrompt(product, candidates, opi) }],
+      output_config: { format: { type: "json_schema", schema: RESULT_SCHEMA } }
+    };
+
+    return postMessages(body).then(function (data) {
+      var parsed = extractJson(firstText(data));
       if (!parsed || !parsed.code) {
-        console.error("[DeklaAI] JSON o'qib bo'lmadi. Model javobi:", content);
+        console.error("[DeklaAI] JSON o'qib bo'lmadi. Model javobi:", data);
         throw new Error("Model javobini o'qib bo'lmadi.");
       }
       return parsed;
     });
   }
 
-  /* ---- image (vision) → product description, via qwen-vl ---- */
-  var VL_MODEL = "qwen-vl-max";
-
-  function fileToDataUrl(file) {
+  /* ---- image (vision) → product description ---- */
+  function fileToImageBlock(file) {
     return new Promise(function (resolve, reject) {
       var fr = new FileReader();
-      fr.onload = function () { resolve(fr.result); };
+      fr.onload = function () {
+        var url = String(fr.result || "");
+        var comma = url.indexOf(",");
+        var data = comma >= 0 ? url.slice(comma + 1) : url;
+        var mt = (file.type && /^image\/(jpeg|png|gif|webp)$/.test(file.type)) ? file.type : "image/jpeg";
+        resolve({ type: "image", source: { type: "base64", media_type: mt, data: data } });
+      };
       fr.onerror = function () { reject(new Error("Rasmni o'qib bo'lmadi.")); };
       fr.readAsDataURL(file);
     });
@@ -136,47 +179,31 @@
     if (!files || !files.length) return Promise.reject(new Error("Rasm tanlanmagan."));
 
     var pics = [].slice.call(files).slice(0, 2);
-    return Promise.all(pics.map(fileToDataUrl)).then(function (urls) {
+    return Promise.all(pics.map(fileToImageBlock)).then(function (blocks) {
       var content = [{
         type: "text",
-        text: "Rasm(lar)dagi asosiy tovarni aniqla. FAQAT JSON qaytar (boshqa matnsiz): " +
-          "{\"name\":\"<tovarning qisqa nomi, o'zbekcha>\",\"keywords\":\"<TIFTN qidiruvi uchun kalit so'zlar, o'zbekcha>\"}"
-      }];
-      urls.forEach(function (u) { content.push({ type: "image_url", image_url: { url: u } }); });
+        text: "Rasm(lar)dagi asosiy tovarni aniqla. 'name' — tovarning qisqa nomi (o'zbekcha), " +
+          "'keywords' — TIFTN qidiruvi uchun kalit so'zlar (o'zbekcha)."
+      }].concat(blocks);
 
       var body = {
-        model: VL_MODEL,
-        max_tokens: 256,
-        messages: [{ role: "user", content: content }]
+        model: MODEL,
+        max_tokens: 300,
+        messages: [{ role: "user", content: content }],
+        output_config: { format: { type: "json_schema", schema: VISION_SCHEMA } }
       };
-      return fetch(endpoint(), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body)
-      }).catch(function (e) {
-        console.error("[DeklaAI] rasm: tarmoq/CORS xatosi:", e);
-        throw new Error("Server bilan bog'lanib bo'lmadi (tarmoq/CORS).");
-      }).then(function (r) {
-        return r.text().then(function (raw) {
-          var data; try { data = JSON.parse(raw); } catch (e) { data = null; }
-          if (!r.ok) {
-            var msg = (data && data.error && (data.error.message || data.error)) || raw;
-            console.error("[DeklaAI] rasm server xatosi", r.status, raw);
-            throw new Error("HTTP " + r.status + ": " + (typeof msg === "string" ? msg : JSON.stringify(msg)));
-          }
-          var c = data && data.choices && data.choices[0];
-          var txt = c && c.message && c.message.content;
-          var parsed = extractJson(txt) || {};
-          var name = parsed.name || parsed.keywords || "";
-          if (!name) { console.error("[DeklaAI] rasm: nomi topilmadi:", txt); throw new Error("Rasmdan tovar aniqlanmadi."); }
-          return { name: name, keywords: parsed.keywords || name };
-        });
+
+      return postMessages(body).then(function (data) {
+        var parsed = extractJson(firstText(data)) || {};
+        var name = parsed.name || parsed.keywords || "";
+        if (!name) { console.error("[DeklaAI] rasm: nomi topilmadi:", data); throw new Error("Rasmdan tovar aniqlanmadi."); }
+        return { name: name, keywords: parsed.keywords || name };
       });
     });
   }
 
   window.DeklaAI = {
     classify: classify, describeImage: describeImage,
-    configured: configured, endpoint: endpoint, model: MODEL, vlModel: VL_MODEL
+    configured: configured, endpoint: endpoint, model: MODEL
   };
 })();

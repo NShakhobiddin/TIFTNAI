@@ -27,26 +27,27 @@ screens fill the viewport like a real mobile app.
   (e.g. `paxta` finds `пахта`) via transliteration. Picking a result fills the
   TIFTN result screen with the real code, description and **real alternative
   codes** (final/terminal siblings under the same heading).
-- **AI code classification (Qwen)** — on the "AI savollar" screen, enter a
-  product name/description and Dekla calls **Qwen (`qwen-max`)** to pick the best
-  TIFTN code. The model is grounded in real data: the app first searches the local
-  database for candidate codes, then sends them — together with the official OPI
-  interpretation rules — to Qwen (OpenAI-compatible Chat Completions),
-  which returns the chosen code, a confidence score, an Uzbek explanation and
-  ranked alternatives. The browser calls a **Cloudflare Worker proxy** (`worker/`)
-  that holds the Qwen (DashScope) API key as a secret, so the key is never exposed
+- **AI code classification (Claude)** — on the "AI savollar" screen, enter a
+  product name/description and Dekla calls **Claude (`claude-opus-4-8`)** to pick
+  the best TIFTN code. The model is grounded in real data: the app first searches
+  the local database for candidate codes, then sends them — together with the
+  official OPI interpretation rules — to Claude via the native **Messages API**
+  with **structured outputs** (a JSON schema), so it returns a schema-valid answer:
+  the chosen code, a confidence score, an Uzbek explanation and ranked
+  alternatives. The browser calls a **Cloudflare Worker proxy** (`worker/`) that
+  holds the Anthropic API key as a secret, so the key is never exposed
   client-side. Set your Worker URL via `window.DEKLA_AI_ENDPOINT` in `index.html`
   — see `worker/README.md` for deployment.
 - **Always-on code detection** — classification works even without AI: if the
-  Worker/Qwen is unavailable it falls back to the local TIFTN database and still
+  Worker/Claude is unavailable it falls back to the local TIFTN database and still
   returns the best-matching code.
 - **Animated analysis** — every classification (text, image, Excel) runs behind
   a live overlay with a spinner and step-by-step progress, so you can see the
   app working instead of a result appearing out of nowhere.
 - **Image upload (vision)** — pick product photos; the chosen photos appear as
   real thumbnails, and during analysis the image is shown with a **scanning
-  animation** while Qwen-VL reads it, derives a name, and the app classifies it
-  into a TIFTN code.
+  animation** while Claude reads it (Claude is natively multimodal), derives a
+  name, and the app classifies it into a TIFTN code.
 - **Excel upload** — pick an `.xlsx`/`.csv`; the app parses it (SheetJS) and
   classifies the first product row.
 - **Document upload** — pick an invoice / spec / packing-list file (file picker
@@ -77,7 +78,7 @@ index.html               # page shell + the design template (inert <template>)
 assets/css/app.css        # full-screen layout, fonts, animations
 assets/js/dekla.js        # template engine + app state & customs logic
 assets/js/tiftn.js        # TIFTN search: transliteration, search, code lookup
-assets/js/ai.js           # Claude classifier (Messages API, browser-direct, structured output)
+assets/js/ai.js           # Claude classifier (Messages API via Worker, structured outputs)
 assets/data/tiftn_index.js  # compact runtime code index (all 16 377 codes)
 assets/data/tiftn_meta.js   # chapter/section notes, exclusions, OPI, units
 data/tiftn_tree.json        # full source tree — all 20 652 nodes (16 377 codes)
