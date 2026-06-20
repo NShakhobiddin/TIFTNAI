@@ -54,3 +54,76 @@ html.tg .app-root {
   inset: 0;
   background: #0e2545;
 }
+
+/* ============================================================
+   Analysis overlay — shown while the app reads an image / Excel
+   and asks the AI for a TIFTN code. Lives above #app (in <body>),
+   so it animates smoothly across re-renders.
+   ============================================================ */
+@keyframes dkspin { to { transform: rotate(360deg); } }
+@keyframes dkscan { 0% { top: -34px; } 50% { top: 100%; } 100% { top: -34px; } }
+@keyframes dkfadeout { to { opacity: 0; } }
+@keyframes dkpop { from { transform: translateY(14px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+
+.dk-overlay {
+  position: fixed; inset: 0; z-index: 99999;
+  display: flex; align-items: center; justify-content: center;
+  padding: 28px;
+  background: rgba(9, 20, 40, .60);
+  -webkit-backdrop-filter: blur(5px); backdrop-filter: blur(5px);
+  animation: dkfade .22s ease;
+}
+.dk-overlay.is-hiding { animation: dkfadeout .22s ease forwards; }
+
+.dk-card {
+  width: 100%; max-width: 330px;
+  background: #fff; border-radius: 24px;
+  padding: 28px 22px 24px; text-align: center;
+  box-shadow: 0 26px 70px rgba(8, 18, 40, .5);
+  animation: dkpop .3s cubic-bezier(.2, .8, .25, 1);
+}
+
+/* photo being scanned */
+.dk-scan {
+  position: relative; width: 138px; height: 138px; margin: 2px auto 20px;
+  border-radius: 18px; overflow: hidden; background: #eaf0fa;
+  box-shadow: 0 10px 26px rgba(20, 40, 76, .22);
+}
+.dk-scan img { width: 100%; height: 100%; object-fit: cover; }
+.dk-scan::before {
+  content: ""; position: absolute; inset: 0; z-index: 2;
+  border: 2px solid rgba(28, 163, 84, .5); border-radius: 18px;
+}
+.dk-scan::after {
+  content: ""; position: absolute; left: 0; right: 0; height: 34px; z-index: 3;
+  background: linear-gradient(180deg, rgba(28,163,84,0), rgba(28,163,84,.55), rgba(28,163,84,0));
+  box-shadow: 0 0 18px 5px rgba(28, 163, 84, .45);
+  animation: dkscan 1.6s ease-in-out infinite;
+}
+
+/* spinner orb (text / excel analysis) */
+.dk-orb { width: 66px; height: 66px; margin: 6px auto 20px; position: relative; }
+.dk-orb::before, .dk-orb::after {
+  content: ""; position: absolute; border-radius: 50%; border: 4px solid transparent;
+}
+.dk-orb::before { inset: 0; border-top-color: #1ca354; border-right-color: #1ca354; animation: dkspin .9s linear infinite; }
+.dk-orb::after  { inset: 10px; border-bottom-color: #2f6dd0; border-left-color: #2f6dd0; animation: dkspin 1.4s linear infinite reverse; }
+
+.dk-card-title { font-size: 17.5px; font-weight: 800; color: #14284c; margin: 0 0 4px; }
+.dk-card-sub   { font-size: 12.5px; color: #8b94a6; margin: 0 0 20px; line-height: 1.45; }
+
+.dk-steps { text-align: left; display: flex; flex-direction: column; gap: 13px; }
+.dk-step  { display: flex; align-items: center; gap: 11px; opacity: .4; transition: opacity .35s ease; }
+.dk-step.is-active, .dk-step.is-done { opacity: 1; }
+.dk-step-ic {
+  width: 24px; height: 24px; border-radius: 50%; flex: none;
+  display: flex; align-items: center; justify-content: center;
+  background: #eef2f8; transition: background .35s ease;
+}
+.dk-step.is-active .dk-step-ic { background: #e9f6ee; }
+.dk-step.is-done   .dk-step-ic { background: #1ca354; }
+.dk-step-label { font-size: 13px; font-weight: 600; color: #3a455c; }
+.dk-step.is-active .dk-step-label { color: #14284c; }
+
+.dk-mini { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #cfe6d8; border-top-color: #1ca354; animation: dkspin .7s linear infinite; }
+.dk-dot  { width: 7px; height: 7px; border-radius: 50%; background: #b9c2d2; }

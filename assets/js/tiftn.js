@@ -102,27 +102,92 @@
     };
   }
 
-  /* ---- search ---- */
+  /* ---- search ----
+     Token-aware: a multi-word query like "paxta tampon" matches entries that
+     contain ANY of the words, ranked by how many words hit (name > path), with
+     bonuses for the whole phrase and for code-prefix matches. This makes free
+     text product names (the common case for AI classification) actually work. */
+  var STOP = { "va": 1, "uchun": 1, "bilan": 1, "ham": 1, "yoki": 1, "dan": 1, "ning": 1, "lar": 1 };
+
+  // Synonyms: everyday / colloquial words → the vocabulary the nomenclature
+  // actually uses. Keys & values are in normalized (latin, apostrophe-free)
+  // form. This is what lets "noutbuk", "muzlatgich", "konditsioner" etc. find
+  // the right heading instead of returning nothing.
+  var SYN = {
+    // computing (8471)
+    "noutbuk": "portativ hisoblash mashina", "laptop": "portativ hisoblash mashina",
+    "planshet": "portativ hisoblash mashina", "kompyuter": "hisoblash mashina malumotlarni qayta ishlovchi",
+    "komputer": "hisoblash mashina malumotlarni qayta ishlovchi", "kompyuter": "hisoblash mashina malumotlarni qayta ishlovchi",
+    "monoblok": "hisoblash mashina", "klaviatura": "kiritish qurilma", "printer": "bosib chiqaruvchi",
+    // phones / comms (8517)
+    "smartfon": "telefon apparat uyali", "smartphone": "telefon apparat uyali",
+    "telefon": "telefon apparat uyali", "iphone": "telefon apparat uyali", "aymfon": "telefon apparat uyali",
+    "router": "tarmoq apparat", "modem": "tarmoq apparat",
+    // tv / display (8528)
+    "televizor": "televizion qabul monitor", "tv": "televizion qabul", "monitor": "monitor proektor", "displey": "monitor",
+    // appliances
+    "muzlatgich": "sovutgich muzlatkich", "xolodilnik": "sovutgich muzlatkich", "holodilnik": "sovutgich muzlatkich",
+    "konditsioner": "konditsiya havoni sovutish", "kondisioner": "konditsiya havoni sovutish", "kondicioner": "konditsiya havoni sovutish",
+    "changyutgich": "chang yutuvchi", "pilesos": "chang yutuvchi",
+    // materials
+    "plastik": "plastmassa", "plastmassa": "plastik", "rezina": "kauchuk", "kauchuk": "rezina",
+    "shisha": "oyna", "charm": "teri", "paxta": "paxta tola"
+  };
+
   function search(query, limit) {
     if (!isReady() || !query) return [];
     limit = limit || 30;
-    var q = norm(query);
+    var qn = norm(query);
     var qd = digits(query);
     var useDigits = qd.length >= 3;
+    var tokens = qn.split(/\s+/).filter(function (t) { return t.length >= 2 && !STOP[t]; });
+    if (!tokens.length && qn) tokens = [qn];
+
+    // weighted term list: core words (w=1) + synonym expansions (w=.6)
+    var terms = [];
+    for (var ci = 0; ci < tokens.length; ci++) terms.push({ s: tokens[ci], w: 1 });
+    for (var si = 0; si < tokens.length; si++) {
+      if (SYN[tokens[si]]) SYN[tokens[si]].split(" ").forEach(function (w) { if (w) terms.push({ s: w, w: 0.6 }); });
+    }
+
     var res = [];
     for (var j = 0; j < idx.e.length; j++) {
-      var e = idx.e[j], cd = digits(e[0]), score = -1;
-      if (useDigits && cd.indexOf(qd) === 0) score = 0;                  // code prefix — best
-      else if (q && norm(entryName(e)).indexOf(q) !== -1) score = 1;     // name match
-      else if (q && hay[j].indexOf(q) !== -1) score = 2;                 // path/context match
-      else if (useDigits && cd.indexOf(qd) !== -1) score = 3;            // code anywhere
-      if (score >= 0) res.push([j, score]);
+      var e = idx.e[j], cd = digits(e[0]), score = 0;
+      var nm = norm(entryName(e)), hayj = hay[j];
+
+      if (useDigits) {
+        if (cd.indexOf(qd) === 0) score += 1000;          // code prefix — strongest
+        else if (cd.indexOf(qd) !== -1) score += 220;     // code appears
+      }
+      if (qn) {
+        if (nm.indexOf(qn) !== -1) score += 420;          // whole phrase in name
+        else if (hayj.indexOf(qn) !== -1) score += 150;   // whole phrase in path
+      }
+
+      var hits = 0, coreHits = 0;
+      for (var t = 0; t < terms.length; t++) {
+        var tok = terms[t].s, wt = terms[t].w, got = 0;
+        if (nm.indexOf(tok) !== -1) { score += 60 * wt; got = 1; }
+        else if (hayj.indexOf(tok) !== -1) { score += 24 * wt; got = 1; }
+        else if (tok.length >= 6) {
+          // stem match: catches morphological variants (plastik→plast, metalldan→metall)
+          var stem = tok.slice(0, 5);
+          if (nm.indexOf(stem) !== -1) { score += 34 * wt; got = 1; }
+          else if (hayj.indexOf(stem) !== -1) { score += 14 * wt; got = 1; }
+        }
+        if (got) { hits++; if (wt === 1) coreHits++; }
+      }
+      // need a real signal: at least one word hit, or a code match
+      if (hits === 0 && !(useDigits && score > 0)) continue;
+      if (tokens.length > 1 && coreHits === tokens.length) score += 120; // all core words matched
+      if (e[4] === 1) score += 8;                          // nudge terminal codes up
+
+      res.push([j, score, nm.length]);
     }
-    // by relevance score, then shorter name, then code order
+
     res.sort(function (a, b) {
-      if (a[1] !== b[1]) return a[1] - b[1];
-      var na = entryName(idx.e[a[0]]).length, nb = entryName(idx.e[b[0]]).length;
-      if (na !== nb) return na - nb;
+      if (b[1] !== a[1]) return b[1] - a[1];               // higher score first
+      if (a[2] !== b[2]) return a[2] - b[2];               // shorter name first
       return digits(idx.e[a[0]][0]) < digits(idx.e[b[0]][0]) ? -1 : 1;
     });
     var out = [];

@@ -15,7 +15,7 @@
     productName: "", productDesc: "", material: "", usage: "", feature: "",
     aiLoading: false, aiError: "", aiResult: null,
     // uploads
-    imageFiles: [], excelName: "", excelRows: null, docName: ""
+    imageFiles: [], imageThumbs: [], excelName: "", excelRows: null, docName: ""
   };
 
   function setState(patch) {
@@ -27,6 +27,97 @@
   // Silent update — store input values without re-rendering (keeps native
   // focus/caret on free-text fields the UI doesn't derive anything from).
   function setSilent(patch) { Object.assign(state, patch); }
+
+  /* ---------------- Analysis overlay (animated, above #app) ---------------- */
+  // Lives in <body> so it survives #app re-renders and animates smoothly.
+  var Overlay = (function () {
+    var el = null;
+    var CHECK = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" ' +
+      'stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+
+    function show(opts) {
+      remove();
+      el = document.createElement("div");
+      el.className = "dk-overlay";
+      var card = document.createElement("div");
+      card.className = "dk-card";
+
+      if (opts.image) {
+        var scan = document.createElement("div");
+        scan.className = "dk-scan";
+        var img = document.createElement("img");
+        img.src = opts.image;
+        scan.appendChild(img);
+        card.appendChild(scan);
+      } else {
+        var orb = document.createElement("div");
+        orb.className = "dk-orb";
+        card.appendChild(orb);
+      }
+
+      var title = document.createElement("div");
+      title.className = "dk-card-title";
+      title.textContent = opts.title || "Tahlil qilinmoqda";
+      card.appendChild(title);
+
+      var sub = document.createElement("div");
+      sub.className = "dk-card-sub";
+      sub.textContent = opts.subtitle || "Iltimos, kuting…";
+      card.appendChild(sub);
+
+      var steps = document.createElement("div");
+      steps.className = "dk-steps";
+      (opts.steps || []).forEach(function (label) {
+        var row = document.createElement("div");
+        row.className = "dk-step";
+        var ic = document.createElement("span");
+        ic.className = "dk-step-ic";
+        ic.innerHTML = '<span class="dk-dot"></span>';
+        var lab = document.createElement("span");
+        lab.className = "dk-step-label";
+        lab.textContent = label;
+        row.appendChild(ic); row.appendChild(lab);
+        steps.appendChild(row);
+      });
+      card.appendChild(steps);
+      el.appendChild(card);
+      document.body.appendChild(el);
+      setStep(0);
+    }
+
+    function setStep(i) {
+      if (!el) return;
+      var rows = el.querySelectorAll(".dk-step");
+      for (var k = 0; k < rows.length; k++) {
+        var ic = rows[k].querySelector(".dk-step-ic");
+        if (k < i) { rows[k].className = "dk-step is-done"; ic.innerHTML = CHECK; }
+        else if (k === i) { rows[k].className = "dk-step is-active"; ic.innerHTML = '<span class="dk-mini"></span>'; }
+        else { rows[k].className = "dk-step"; ic.innerHTML = '<span class="dk-dot"></span>'; }
+      }
+    }
+
+    function hide() {
+      if (!el) return;
+      var cur = el; el = null;
+      cur.classList.add("is-hiding");
+      setTimeout(function () { if (cur.parentNode) cur.parentNode.removeChild(cur); }, 230);
+    }
+    function remove() { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }
+
+    return { show: show, setStep: setStep, hide: hide };
+  })();
+
+  function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  // Mark step `i` active, run `work` (optional, may return a Promise), and keep
+  // the step visible for at least `ms` so the animation reads as real work.
+  function phase(i, ms, work) {
+    Overlay.setStep(i);
+    var t0 = Date.now();
+    return Promise.resolve().then(function () { return work ? work() : null; }).then(function (r) {
+      return delay(Math.max(0, ms - (Date.now() - t0))).then(function () { return r; });
+    });
+  }
 
   /* ---------------- TIFTN database search ---------------- */
   function tiftnReady() { return window.TifTn && window.TifTn.isReady(); }
@@ -53,6 +144,17 @@
   /* ---------------- AI classification (Qwen via Worker) ---------------- */
   var aiHas = function () { return !!(window.DeklaAI && window.DeklaAI.configured()); };
 
+  // Anchor an AI result to a real DB code. The model is told to pick only from
+  // the candidate list, but if it ever returns a code we can't find, fall back
+  // to the strongest candidate while keeping the AI's reasoning/confidence.
+  function groundResult(res, candidates) {
+    if (!res) return res;
+    if (tiftnReady() && window.TifTn.get(res.code)) return res;
+    var top = candidates && candidates[0];
+    if (top) { res.code = top.code; if (!res.name) res.name = top.name; }
+    return res;
+  }
+
   // Land on the TIFTN result screen with a classification result.
   function finishResult(res) {
     var sel = (tiftnReady() && window.TifTn.get(res.code)) || { code: res.code, name: res.name || "", path: "", chapterTitle: "", unit: "" };
@@ -75,29 +177,52 @@
     };
   }
 
-  // Run text classification for a query; AI when configured, else local.
-  function classifyQuery(query, product) {
-    var candidates = tiftnReady() ? window.TifTn.search(query, 20) : [];
-    if (!candidates.length) { setState({ aiLoading: false, aiError: "Mos kod topilmadi. Boshqacha yozib ko'ring." }); return; }
-    if (!aiHas()) { finishResult(localResult(candidates)); return; }
-    window.DeklaAI.classify(product, candidates, window.TifTn.opi())
-      .then(finishResult)
+  function ensureTiftn() { return tiftnReady() ? Promise.resolve() : window.TifTn.load(); }
+
+  // Classify a list of real DB candidates: AI when configured (grounded to the
+  // DB), otherwise the best local match. Always resolves with a usable result.
+  function classifyCandidates(product, candidates) {
+    if (!aiHas()) return Promise.resolve(localResult(candidates));
+    return window.DeklaAI.classify(product, candidates, window.TifTn.opi())
+      .then(function (res) { return groundResult(res, candidates); })
       .catch(function (e) {
         console.warn("[Dekla] AI fallback:", e && e.message);
-        finishResult(localResult(candidates, "Lokal baza bo'yicha (AI ulanmadi: " + (e && e.message || "xato") + ")."));
+        return localResult(candidates, "Lokal baza bo'yicha (AI ulanmadi: " + (e && e.message || "xato") + ").");
       });
+  }
+
+  // Mark all steps done, hold briefly, then reveal the result.
+  function finishWithOverlay(res, stepCount) {
+    Overlay.setStep(stepCount);
+    return delay(420).then(function () { Overlay.hide(); finishResult(res); });
+  }
+  function failOverlay(e) {
+    Overlay.hide();
+    setState({ aiLoading: false, aiError: (e && e.message) || "Tahlil xatosi." });
   }
 
   function runAI() {
     var name = (state.productName || "").trim();
     var desc = (state.productDesc || "").trim();
-    if (!name && !desc) { setState({ aiError: "Avval tovar nomini kiriting." }); return; }
-    setState({ aiLoading: true, aiError: "" });
-    var query = [name, desc, state.material].filter(Boolean).join(" ");
-    var product = { name: name, desc: desc, material: state.material || "", usage: state.usage || "" };
-    var go = function () { classifyQuery(query, product); };
-    if (tiftnReady()) go();
-    else window.TifTn.load().then(go).catch(function () { setState({ aiLoading: false, aiError: "TIFTN bazasi yuklanmadi." }); });
+    var query = [name, desc, state.material, state.usage, state.feature].filter(Boolean).join(" ").trim();
+    if (!query) { setState({ aiError: "Avval tovar nomini kiriting yoki savollarga javob bering." }); return; }
+    var product = { name: name || state.material || query, desc: desc, material: state.material || "", usage: state.usage || "" };
+    var useAI = aiHas();
+    setSilent({ aiLoading: true, aiError: "" });
+    Overlay.show({
+      title: useAI ? "AI tahlil qilmoqda" : "TIFTN aniqlanmoqda",
+      subtitle: useAI ? "Eng mos TIFTN kodi tanlanmoqda" : "Lokal baza bo'yicha qidirilmoqda",
+      steps: ["TIFTN bazasi tayyorlanmoqda", "Nomzod kodlar qidirilmoqda", useAI ? "AI eng mos kodni tanlamoqda" : "Eng mos kod tanlanmoqda"]
+    });
+    var candidates = [];
+    phase(0, 550, ensureTiftn)
+      .then(function () { return phase(1, 650, function () { candidates = window.TifTn.search(query, 20); }); })
+      .then(function () {
+        if (!candidates.length) throw new Error("Mos kod topilmadi. Boshqacha yozib ko'ring.");
+        return phase(2, 0, function () { return classifyCandidates(product, candidates); });
+      })
+      .then(function (res) { return finishWithOverlay(res, 3); })
+      .catch(failOverlay);
   }
 
   /* ---------------- File uploads ---------------- */
@@ -115,7 +240,11 @@
   }
 
   function pickImage() {
-    openPicker("image/*", true, function (files) { setState({ imageFiles: [].slice.call(files), aiError: "" }); });
+    openPicker("image/*", true, function (files) {
+      (state.imageThumbs || []).forEach(function (u) { try { URL.revokeObjectURL(u); } catch (e) {} });
+      var arr = [].slice.call(files);
+      setState({ imageFiles: arr, imageThumbs: arr.map(function (f) { return URL.createObjectURL(f); }), aiError: "" });
+    });
   }
   function pickExcel() {
     openPicker(".xlsx,.xls,.csv", false, function (files) {
@@ -128,19 +257,32 @@
     });
   }
 
-  // Image → vision describe → classify
+  // Image → vision describe → classify (with a visible, animated analysis)
   function runImageAI() {
     if (!state.imageFiles || !state.imageFiles.length) { setState({ aiError: "Avval rasm tanlang." }); return; }
     if (!aiHas()) { setState({ aiError: "Rasm tahlili uchun AI server (Worker) ulanishi kerak." }); return; }
-    setState({ aiLoading: true, aiError: "" });
-    var go = function () {
-      window.DeklaAI.describeImage(state.imageFiles).then(function (d) {
-        classifyQuery(d.keywords || d.name, { name: d.name, desc: "rasm orqali aniqlangan", material: "", usage: "" });
-      }).catch(function (e) {
-        setState({ aiLoading: false, aiError: e && e.message || "Rasm tahlili xatosi." });
-      });
-    };
-    if (tiftnReady()) go(); else window.TifTn.load().then(go).catch(function () { setState({ aiLoading: false, aiError: "TIFTN bazasi yuklanmadi." }); });
+    setSilent({ aiLoading: true, aiError: "" });
+    Overlay.show({
+      title: "Rasm tahlil qilinmoqda",
+      subtitle: "AI rasmni o'qib, TIFTN kodini aniqlamoqda",
+      image: (state.imageThumbs && state.imageThumbs[0]) || null,
+      steps: ["Rasm tayyorlanmoqda", "AI rasmni ko'rib chiqmoqda", "TIFTN bazasidan qidirilmoqda", "Eng mos kod tanlanmoqda"]
+    });
+    var info = null, candidates = [];
+    phase(0, 500, ensureTiftn)
+      .then(function () { return phase(1, 0, function () { return window.DeklaAI.describeImage(state.imageFiles); }); })
+      .then(function (d) {
+        info = d;
+        return phase(2, 650, function () { candidates = window.TifTn.search(d.keywords || d.name, 20); });
+      })
+      .then(function () {
+        if (!candidates.length) throw new Error("Rasmdan TIFTN kodi topilmadi" + (info && info.name ? " (" + info.name + ")" : "") + ".");
+        return phase(3, 0, function () {
+          return classifyCandidates({ name: info.name, desc: "rasm orqali aniqlangan", material: state.material || "", usage: state.usage || "" }, candidates);
+        });
+      })
+      .then(function (res) { return finishWithOverlay(res, 4); })
+      .catch(failOverlay);
   }
 
   // Excel/CSV → parse first product row → classify
@@ -171,21 +313,34 @@
   function runExcelAI() {
     var file = state._excelFile;
     if (!file) { setState({ aiError: "Avval Excel fayl tanlang." }); return; }
-    setState({ aiLoading: true, aiError: "" });
-    loadXlsx().then(function (XLSX) {
-      return file.arrayBuffer().then(function (buf) {
-        var wb = XLSX.read(buf, { type: "array" });
-        var sheet = wb.Sheets[wb.SheetNames[0]];
-        var rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-        var name = firstProductName(rows);
-        if (!name) throw new Error("Excelda tovar nomi ustuni topilmadi.");
-        setState({ excelRows: rows.length });
-        var run = function () { classifyQuery(name, { name: name, desc: "Excel fayldan", material: "", usage: "" }); };
-        tiftnReady() ? run() : window.TifTn.load().then(run);
-      });
-    }).catch(function (e) {
-      setState({ aiLoading: false, aiError: e && e.message || "Excelni o'qib bo'lmadi." });
+    var useAI = aiHas();
+    setSilent({ aiLoading: true, aiError: "" });
+    Overlay.show({
+      title: "Excel tahlil qilinmoqda",
+      subtitle: "Fayldan tovar aniqlanib, TIFTN kodi tanlanmoqda",
+      steps: ["Excel o'qilmoqda", "Tovar aniqlanmoqda", useAI ? "AI eng mos kodni tanlamoqda" : "Eng mos kod tanlanmoqda"]
     });
+    var name = "", candidates = [];
+    phase(0, 500, function () { return loadXlsx(); })
+      .then(function (XLSX) {
+        return phase(1, 550, function () {
+          return file.arrayBuffer().then(function (buf) {
+            var wb = XLSX.read(buf, { type: "array" });
+            var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
+            name = firstProductName(rows);
+            if (!name) throw new Error("Excelda tovar nomi ustuni topilmadi.");
+            setSilent({ excelRows: rows.length });
+          });
+        });
+      })
+      .then(ensureTiftn)
+      .then(function () {
+        candidates = window.TifTn.search(name, 20);
+        if (!candidates.length) throw new Error("Excel tovari uchun mos kod topilmadi: " + name);
+        return phase(2, 0, function () { return classifyCandidates({ name: name, desc: "Excel fayldan", material: "", usage: "" }, candidates); });
+      })
+      .then(function (res) { return finishWithOverlay(res, 3); })
+      .catch(failOverlay);
   }
 
   function fmt(n) {
@@ -324,6 +479,8 @@
       aiLoading: s.aiLoading, aiError: s.aiError || "", hasAiError: !!s.aiError,
       aiBtn: s.aiLoading ? "AI tahlil qilmoqda…" : "AI bilan aniqlash",
       // uploads
+      imageThumbs: (s.imageThumbs || []).map(function (u) { return { url: u }; }),
+      hasImages: (s.imageThumbs || []).length > 0,
       imageHint: (s.imageFiles && s.imageFiles.length)
         ? (s.imageFiles.length + " ta rasm tanlandi — tahlilga tayyor")
         : "JPG, PNG, WEBP · bosing va rasm tanlang",

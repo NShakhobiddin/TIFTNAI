@@ -18,10 +18,15 @@ screens fill the viewport like a real mobile app.
 - **Real TIFTN database search** — the full PQ-181 (2025) nomenclature.
   Search runs across **all 16 377 codes** — headings (4-digit), subheadings
   (6-digit) and national codes (10-digit) — not just the final codes. Type a
-  product name or a code and get instant results. Works in **both Latin and
-  Cyrillic** (e.g. `paxta` finds `пахта`) via transliteration. Picking a result
-  fills the TIFTN result screen with the real code, description and **real
-  alternative codes** (final/terminal siblings under the same heading).
+  product name or a code and get instant results. The matcher is
+  **token-aware** (multi-word names like `plastik quvur` work), tolerant of word
+  variants (stemming, e.g. `plastik`→`plastmassa`), and ships a small
+  **synonym layer** so everyday words map to the nomenclature's vocabulary
+  (`noutbuk`→portativ hisoblash mashinasi/8471, `muzlatgich`→sovutgich/8418,
+  `konditsioner`→8415, `televizor`→8528). Works in **both Latin and Cyrillic**
+  (e.g. `paxta` finds `пахта`) via transliteration. Picking a result fills the
+  TIFTN result screen with the real code, description and **real alternative
+  codes** (final/terminal siblings under the same heading).
 - **AI code classification (Qwen)** — on the "AI savollar" screen, enter a
   product name/description and Dekla calls **Qwen (`qwen-max`)** to pick the best
   TIFTN code. The model is grounded in real data: the app first searches the local
@@ -35,8 +40,13 @@ screens fill the viewport like a real mobile app.
 - **Always-on code detection** — classification works even without AI: if the
   Worker/Qwen is unavailable it falls back to the local TIFTN database and still
   returns the best-matching code.
-- **Image upload (vision)** — pick product photos; Qwen-VL reads the image,
-  derives a name, and the app classifies it into a TIFTN code.
+- **Animated analysis** — every classification (text, image, Excel) runs behind
+  a live overlay with a spinner and step-by-step progress, so you can see the
+  app working instead of a result appearing out of nowhere.
+- **Image upload (vision)** — pick product photos; the chosen photos appear as
+  real thumbnails, and during analysis the image is shown with a **scanning
+  animation** while Qwen-VL reads it, derives a name, and the app classifies it
+  into a TIFTN code.
 - **Excel upload** — pick an `.xlsx`/`.csv`; the app parses it (SheetJS) and
   classifies the first product row.
 - **Document upload** — pick an invoice / spec / packing-list file (file picker
