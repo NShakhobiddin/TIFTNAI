@@ -13,7 +13,7 @@
     q: "", results: [], selected: null, tiftnLoading: false,
     // AI classification
     productName: "", productDesc: "", material: "", usage: "", feature: "",
-    keyInput: "", aiLoading: false, aiError: "", aiResult: null
+    aiLoading: false, aiError: "", aiResult: null
   };
 
   function setState(patch) {
@@ -48,21 +48,14 @@
     setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) }; });
   }
 
-  /* ---------------- AI classification (Claude) ---------------- */
-  function aiReady() { return !!(window.DeklaAI && window.DeklaAI.hasKey()); }
-
-  function saveKey() {
-    var k = (state.keyInput || "").trim();
-    if (!k) { setState({ aiError: "API kalitini kiriting." }); return; }
-    window.DeklaAI.setKey(k);
-    setState({ keyInput: "", aiError: "" });
-  }
-
+  /* ---------------- AI classification (Claude via Worker) ---------------- */
   function runAI() {
     var name = (state.productName || "").trim();
     var desc = (state.productDesc || "").trim();
     if (!name && !desc) { setState({ aiError: "Avval tovar nomini kiriting." }); return; }
-    if (!aiReady()) { setState({ aiError: "Anthropic API kalitini kiriting (AI uchun kerak)." }); return; }
+    if (!(window.DeklaAI && window.DeklaAI.configured())) {
+      setState({ aiError: "AI server sozlanmagan. index.html da Worker manzilini kiriting." }); return;
+    }
 
     setState({ aiLoading: true, aiError: "" });
 
@@ -217,7 +210,7 @@
       selConfPct: selConfPct, selReasoning: selReasoning,
       alts: alts, hasAlts: alts.length > 0,
       // AI classification
-      productName: s.productName || "", aiHasKey: aiReady(),
+      productName: s.productName || "",
       aiLoading: s.aiLoading, aiError: s.aiError || "", hasAiError: !!s.aiError,
       aiBtn: s.aiLoading ? "AI tahlil qilmoqda…" : "AI bilan aniqlash",
       h: {
@@ -227,8 +220,7 @@
         onMaterial: function (e) { setSilent({ material: e.target.value }); },
         onUsage: function (e) { setSilent({ usage: e.target.value }); },
         onFeature: function (e) { setSilent({ feature: e.target.value }); },
-        onKeyInput: function (e) { setSilent({ keyInput: e.target.value }); },
-        saveKey: saveKey, runAI: runAI,
+        runAI: runAI,
         back: back, nextOnb: nextOnb, toggleCert: function () { setState(function (p) { return { cert: !p.cert }; }); },
         splash: go("splash"), login: go("login"), sms: go("sms"), onb: go("onb"), dash: go("dash"),
         tezkor: go("tezkor"), new: go("new"), product: go("product"), image: go("image"), excel: go("excel"),

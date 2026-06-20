@@ -26,10 +26,12 @@ screens fill the viewport like a real mobile app.
   product name/description and Dekla calls **Claude (`claude-opus-4-8`)** to pick
   the best TIFTN code. The model is grounded in real data: the app first searches
   the local database for candidate codes, then sends them — together with the
-  official OPI interpretation rules — to Claude, which returns the chosen code,
-  a confidence score, an Uzbek explanation and ranked alternatives. Runs fully
-  client-side via the Anthropic Messages API (structured output); the user
-  supplies their own API key, stored only in `localStorage`.
+  official OPI interpretation rules — to Claude, which returns the chosen code, a
+  confidence score, an Uzbek explanation and ranked alternatives (structured
+  output). The browser calls a **Cloudflare Worker proxy** (`worker/`) that holds
+  the Anthropic API key as a secret, so the key is never exposed client-side. Set
+  your Worker URL via `window.DEKLA_AI_ENDPOINT` in `index.html` — see
+  `worker/README.md` for deployment.
 - **Live customs calculator** — CIP value, customs duty (5% / 0% with an ST-1
   certificate toggle), VAT (15%), customs and processing fees are recomputed
   instantly as you type.

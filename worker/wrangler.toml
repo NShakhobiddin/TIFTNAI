@@ -1,0 +1,11 @@
+name = "dekla-ai"
+main = "worker.js"
+compatibility_date = "2026-01-01"
+
+# Optional: lock the proxy to your site's origin (recommended).
+# Replace with where the app is hosted, e.g. https://nshakhobiddin.github.io
+# [vars]
+# ALLOWED_ORIGIN = "https://nshakhobiddin.github.io"
+
+# ANTHROPIC_API_KEY is a SECRET — do NOT put it here.
+# Set it with:  npx wrangler secret put ANTHROPIC_API_KEY

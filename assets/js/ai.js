@@ -1,21 +1,25 @@
 /* ============================================================
    ai.js — Dekla AI: Claude-powered TIFTN classification
-   Static / no-backend: the user supplies their own Anthropic
-   API key (stored in localStorage). The browser calls the
-   Messages API directly using the direct-browser-access header.
-   Structured output (output_config.format) guarantees the model
-   returns a code chosen from the candidate list.
+   The browser calls YOUR Cloudflare Worker proxy (not Anthropic
+   directly). The Worker holds the ANTHROPIC_API_KEY as a secret
+   and forwards the request — so the key never reaches the browser.
+
+   Configure the endpoint in index.html:
+     <script>window.DEKLA_AI_ENDPOINT = "https://your-worker.workers.dev";</script>
    ============================================================ */
 (function () {
   "use strict";
 
-  var API = "https://api.anthropic.com/v1/messages";
   var MODEL = "claude-opus-4-8";
-  var KEY_STORE = "dekla_anthropic_key";
+  var PLACEHOLDER = "https://YOUR-WORKER.workers.dev";
 
-  function getKey() { try { return localStorage.getItem(KEY_STORE) || ""; } catch (e) { return ""; } }
-  function setKey(k) { try { k ? localStorage.setItem(KEY_STORE, k) : localStorage.removeItem(KEY_STORE); } catch (e) {} }
-  function hasKey() { return !!getKey(); }
+  function endpoint() {
+    return (window.DEKLA_AI_ENDPOINT || "").trim();
+  }
+  function configured() {
+    var e = endpoint();
+    return !!e && e.indexOf("YOUR-WORKER") === -1;
+  }
 
   // Structured-output schema — the model must return exactly this shape.
   var SCHEMA = {
@@ -75,10 +79,10 @@
   }
 
   function classify(product, candidates, opi) {
-    var key = getKey();
-    if (!key) return Promise.reject(new Error("Anthropic API kaliti kiritilmagan."));
+    if (!configured()) return Promise.reject(new Error("AI server (Cloudflare Worker) sozlanmagan."));
     if (!candidates || !candidates.length) return Promise.reject(new Error("Nomzod kodlar topilmadi. Tovar nomini aniqroq kiriting."));
 
+    // The Anthropic Messages body — the Worker injects the API key and forwards it.
     var body = {
       model: MODEL,
       max_tokens: 1024,
@@ -86,14 +90,9 @@
       messages: [{ role: "user", content: buildPrompt(product, candidates, opi) }]
     };
 
-    return fetch(API, {
+    return fetch(endpoint(), {
       method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": key,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true"
-      },
+      headers: { "content-type": "application/json" },
       body: JSON.stringify(body)
     }).then(function (r) {
       return r.json().then(function (data) {
@@ -113,5 +112,5 @@
     });
   }
 
-  window.DeklaAI = { getKey: getKey, setKey: setKey, hasKey: hasKey, classify: classify, model: MODEL };
+  window.DeklaAI = { classify: classify, configured: configured, endpoint: endpoint, model: MODEL };
 })();
