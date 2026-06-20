@@ -1,42 +1,62 @@
 /* ============================================================
-   telegram.js — Telegram Mini App integration (optional)
-   No-op when the app is opened in a normal browser.
+   telegram.js — Telegram Mini App integration
+   Makes the app fill the whole Telegram window (fullscreen +
+   safe-area aware). No-op in a normal browser.
    ============================================================ */
 (function () {
   "use strict";
   var tg = window.Telegram && window.Telegram.WebApp;
-  if (!tg || !tg.initData && !tg.platform) {
-    // Not inside Telegram — nothing to do.
-    if (!tg) return;
+  if (!tg) return;
+
+  var root = document.documentElement;
+  root.classList.add("tg");
+
+  function px(n) { return (n || 0) + "px"; }
+
+  function applyInsets() {
+    try {
+      var sa = tg.contentSafeAreaInset || tg.safeAreaInset || {};
+      root.style.setProperty("--tg-top", px(sa.top));
+      root.style.setProperty("--tg-bottom", px(sa.bottom));
+      var h = tg.viewportStableHeight || tg.viewportHeight;
+      if (h) root.style.setProperty("--tg-h", px(h));
+    } catch (e) { /* ignore */ }
   }
+
   try {
     tg.ready();
     if (tg.expand) tg.expand();
+    // Bot API 8.0+ — true fullscreen (hides Telegram's own chrome).
+    if (tg.requestFullscreen) { try { tg.requestFullscreen(); } catch (e) {} }
     if (tg.setHeaderColor) tg.setHeaderColor("#0e2545");
     if (tg.setBackgroundColor) tg.setBackgroundColor("#0e2545");
+    if (tg.setBottomBarColor) { try { tg.setBottomBarColor("#f4f6fb"); } catch (e) {} }
     if (tg.disableVerticalSwipes) tg.disableVerticalSwipes();
-    document.documentElement.classList.add("tg");
   } catch (e) { /* ignore */ }
 
-  // Sync Telegram's hardware/back button with the app's in-screen back button.
+  // Keep insets/height in sync with Telegram events.
+  ["safeAreaChanged", "contentSafeAreaChanged", "viewportChanged", "fullscreenChanged"].forEach(function (ev) {
+    try { tg.onEvent(ev, applyInsets); } catch (e) {}
+  });
+  applyInsets();
+  setTimeout(applyInsets, 300);
+
+  // Sync Telegram's Back button with the app's in-screen back button.
   try {
     if (tg.BackButton) {
-      var appBack = function () {
-        var b = document.querySelector('#app [data-screen-label] button, #app button');
+      tg.BackButton.onClick(function () {
+        var b = document.querySelector('#app button');
         if (b) b.click();
-      };
-      tg.BackButton.onClick(appBack);
-      // Show the Back button unless we're on a root screen.
+      });
       var sync = function () {
-        var label = (document.querySelector('#app [data-screen-label]') || {}).getAttribute
-          ? document.querySelector('#app [data-screen-label]').getAttribute("data-screen-label") : "";
-        var root = ["Splash", "Dashboard", "Hisoblashlar", "Saqlangan", "Profil"];
-        if (root.indexOf(label) === -1) tg.BackButton.show(); else tg.BackButton.hide();
+        var el = document.querySelector('#app [data-screen-label]');
+        var label = el ? el.getAttribute("data-screen-label") : "";
+        var root2 = ["Splash", "Dashboard", "Hisoblashlar", "Saqlangan", "Profil"];
+        if (root2.indexOf(label) === -1) tg.BackButton.show(); else tg.BackButton.hide();
       };
-      var mo = new MutationObserver(sync);
       var app = document.getElementById("app");
-      if (app) mo.observe(app, { childList: true, subtree: false });
-      setInterval(sync, 600);
+      if (app && window.MutationObserver) new MutationObserver(sync).observe(app, { childList: true });
+      setInterval(sync, 700);
     }
   } catch (e) { /* ignore */ }
 })();

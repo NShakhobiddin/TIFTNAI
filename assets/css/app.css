@@ -35,6 +35,16 @@ button { cursor: pointer; }
 /* a little breathing room at the very top so the first header isn't glued to the edge */
 .app-root > :first-child { margin-top: 6px; }
 
+/* ---- Telegram Mini App: fill the whole Telegram window ----
+   telegram.js adds the `tg` class to <html> and feeds these CSS vars from
+   Telegram's safe-area / viewport so the app sits exactly inside the window. */
+html.tg, html.tg body { background: #0e2545; }
+html.tg .app-root {
+  height: var(--tg-h, 100dvh);
+  padding-top: var(--tg-top, 0px);
+  padding-bottom: var(--tg-bottom, 0px);
+}
+
 .dk-anim { animation: dkfade .3s ease; }
 
 /* Loading state before the runtime mounts */

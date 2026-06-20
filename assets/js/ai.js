@@ -71,11 +71,12 @@
     if (!candidates || !candidates.length) return Promise.reject(new Error("Nomzod kodlar topilmadi. Tovar nomini aniqroq kiriting."));
 
     // OpenAI-compatible Chat Completions body — the Worker injects the key & forwards it.
+    // No `response_format` is sent: not every Qwen model accepts it (it can trigger a
+    // 400), and we already coerce the reply to JSON via extractJson + a strict prompt.
     var body = {
       model: MODEL,
       max_tokens: 1024,
       temperature: 0.2,
-      response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt() },
         { role: "user", content: userPrompt(product, candidates, opi) }

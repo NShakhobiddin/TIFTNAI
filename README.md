@@ -26,7 +26,7 @@ screens fill the viewport like a real mobile app.
   product name/description and Dekla calls **Qwen (`qwen-max`)** to pick the best
   TIFTN code. The model is grounded in real data: the app first searches the local
   database for candidate codes, then sends them — together with the official OPI
-  interpretation rules — to Qwen (OpenAI-compatible Chat Completions, JSON mode),
+  interpretation rules — to Qwen (OpenAI-compatible Chat Completions),
   which returns the chosen code, a confidence score, an Uzbek explanation and
   ranked alternatives. The browser calls a **Cloudflare Worker proxy** (`worker/`)
   that holds the Qwen (DashScope) API key as a secret, so the key is never exposed
