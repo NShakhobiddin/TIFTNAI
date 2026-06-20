@@ -10,7 +10,10 @@
   var state = {
     screen: "splash", stack: [], onb: 0, cert: false,
     invoice: 10000, transport: 800, insurance: 200, other: 150, rate: 12600,
-    q: "", results: [], selected: null, tiftnLoading: false
+    q: "", results: [], selected: null, tiftnLoading: false,
+    // AI classification
+    productName: "", productDesc: "", material: "", usage: "", feature: "",
+    keyInput: "", aiLoading: false, aiError: "", aiResult: null
   };
 
   function setState(patch) {
@@ -18,6 +21,10 @@
     Object.assign(state, p);
     render();
   }
+
+  // Silent update — store input values without re-rendering (keeps native
+  // focus/caret on free-text fields the UI doesn't derive anything from).
+  function setSilent(patch) { Object.assign(state, patch); }
 
   /* ---------------- TIFTN database search ---------------- */
   function tiftnReady() { return window.TifTn && window.TifTn.isReady(); }
@@ -39,6 +46,43 @@
   function selectCode(code) {
     var sel = tiftnReady() ? window.TifTn.get(code) : { code: code };
     setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) }; });
+  }
+
+  /* ---------------- AI classification (Claude) ---------------- */
+  function aiReady() { return !!(window.DeklaAI && window.DeklaAI.hasKey()); }
+
+  function saveKey() {
+    var k = (state.keyInput || "").trim();
+    if (!k) { setState({ aiError: "API kalitini kiriting." }); return; }
+    window.DeklaAI.setKey(k);
+    setState({ keyInput: "", aiError: "" });
+  }
+
+  function runAI() {
+    var name = (state.productName || "").trim();
+    var desc = (state.productDesc || "").trim();
+    if (!name && !desc) { setState({ aiError: "Avval tovar nomini kiriting." }); return; }
+    if (!aiReady()) { setState({ aiError: "Anthropic API kalitini kiriting (AI uchun kerak)." }); return; }
+
+    setState({ aiLoading: true, aiError: "" });
+
+    var go = function () {
+      var query = [name, desc, state.material].filter(Boolean).join(" ");
+      var candidates = window.TifTn.search(query, 20);
+      var product = { name: name, desc: desc, material: state.material || "", usage: state.usage || "" };
+      window.DeklaAI.classify(product, candidates, window.TifTn.opi()).then(function (res) {
+        var sel = window.TifTn.get(res.code) || { code: res.code, name: "", path: "", chapterTitle: "", unit: "" };
+        sel = Object.assign({}, sel, { confidence: res.confidence, reasoning: res.reasoning });
+        setState(function (p) {
+          return { aiLoading: false, aiResult: res, selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) };
+        });
+      }).catch(function (e) {
+        setState({ aiLoading: false, aiError: e.message || "AI xatosi yuz berdi." });
+      });
+    };
+
+    if (tiftnReady()) go();
+    else window.TifTn.load().then(go).catch(function () { setState({ aiLoading: false, aiError: "TIFTN bazasi yuklanmadi." }); });
   }
 
   function fmt(n) {
@@ -97,19 +141,41 @@
 
     // ---- selected code (TIFTN result screen) ----
     var sel = s.selected;
+    var aiOn = !!s.aiResult;
     var selCode = sel ? sel.code : "8471.30.000 0";
     var selName = sel ? sel.name : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar";
     var selDesc = sel
       ? (sel.name + (sel.chapterTitle ? " · " + sel.chapterTitle : ""))
       : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar; ularning bloklari; magnit yoki optik o'quv qurilmalari.";
     var selUnit = sel ? (sel.unit || "—") : "—";
+    var selConf = (sel && sel.confidence != null) ? sel.confidence : 94;
+    var selConfPct = selConf + "%";
+    var selReasoning = (sel && sel.reasoning)
+      ? sel.reasoning
+      : "Ushbu kod siz kiritgan ma'lumotlarga eng mos keladi.";
 
-    // ---- alternative codes (real siblings under the same heading) ----
-    var altPct = ["94%", "78%", "64%", "52%", "43%"];
-    var altBg = ["#e6f6ec", "#e6f6ec", "#fef0e0", "#fef0e0", "#fdeaea"];
-    var altColor = ["#1a8c44", "#1a8c44", "#c9821a", "#c9821a", "#d84a4a"];
+    // colour ramp for a confidence value
+    var confBg = function (c) { return c >= 70 ? "#e6f6ec" : c >= 50 ? "#fef0e0" : "#fdeaea"; };
+    var confColor = function (c) { return c >= 70 ? "#1a8c44" : c >= 50 ? "#c9821a" : "#d84a4a"; };
+
+    // ---- alternative codes: AI-ranked when available, else DB siblings ----
     var alts = [];
-    if (sel && tiftnReady()) {
+    if (aiOn) {
+      var seen = {};
+      alts.push({ code: selCode, name: selName, pct: selConfPct, bg: confBg(selConf),
+        color: confColor(selConf), rowBg: "#f3fbf6", pick: pickOf(selCode) });
+      seen[selCode] = 1;
+      (s.aiResult.alternatives || []).forEach(function (a) {
+        if (seen[a.code]) return; seen[a.code] = 1;
+        var info = tiftnReady() ? window.TifTn.get(a.code) : null;
+        var c = a.confidence != null ? a.confidence : 50;
+        alts.push({ code: a.code, name: (info && info.name) || a.note || "—", pct: c + "%",
+          bg: confBg(c), color: confColor(c), rowBg: "#ffffff", pick: pickOf(a.code) });
+      });
+    } else if (sel && tiftnReady()) {
+      var altPct = ["94%", "78%", "64%", "52%", "43%"];
+      var altBg = ["#e6f6ec", "#e6f6ec", "#fef0e0", "#fef0e0", "#fdeaea"];
+      var altColor = ["#1a8c44", "#1a8c44", "#c9821a", "#c9821a", "#d84a4a"];
       var sibs = window.TifTn.siblings(sel.code, 4);
       alts.push({ code: sel.code, name: sel.name, pct: "94%", bg: "#e6f6ec", color: "#1a8c44",
         rowBg: "#f3fbf6", pick: pickOf(sel.code) });
@@ -148,9 +214,21 @@
       tiftnLoading: s.tiftnLoading, showRecents: !hasQuery && !s.tiftnLoading,
       noResults: hasQuery && !s.tiftnLoading && results.length === 0,
       selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
+      selConfPct: selConfPct, selReasoning: selReasoning,
       alts: alts, hasAlts: alts.length > 0,
+      // AI classification
+      productName: s.productName || "", aiHasKey: aiReady(),
+      aiLoading: s.aiLoading, aiError: s.aiError || "", hasAiError: !!s.aiError,
+      aiBtn: s.aiLoading ? "AI tahlil qilmoqda…" : "AI bilan aniqlash",
       h: {
         onSearch: function (e) { runSearch(e.target.value); },
+        onProductName: function (e) { setSilent({ productName: e.target.value }); },
+        onProductDesc: function (e) { setSilent({ productDesc: e.target.value }); },
+        onMaterial: function (e) { setSilent({ material: e.target.value }); },
+        onUsage: function (e) { setSilent({ usage: e.target.value }); },
+        onFeature: function (e) { setSilent({ feature: e.target.value }); },
+        onKeyInput: function (e) { setSilent({ keyInput: e.target.value }); },
+        saveKey: saveKey, runAI: runAI,
         back: back, nextOnb: nextOnb, toggleCert: function () { setState(function (p) { return { cert: !p.cert }; }); },
         splash: go("splash"), login: go("login"), sms: go("sms"), onb: go("onb"), dash: go("dash"),
         tezkor: go("tezkor"), new: go("new"), product: go("product"), image: go("image"), excel: go("excel"),

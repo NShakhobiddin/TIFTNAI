@@ -22,6 +22,14 @@ screens fill the viewport like a real mobile app.
   Cyrillic** (e.g. `paxta` finds `пахта`) via transliteration. Picking a result
   fills the TIFTN result screen with the real code, description and **real
   alternative codes** (final/terminal siblings under the same heading).
+- **AI code classification (Claude)** — on the "AI savollar" screen, enter a
+  product name/description and Dekla calls **Claude (`claude-opus-4-8`)** to pick
+  the best TIFTN code. The model is grounded in real data: the app first searches
+  the local database for candidate codes, then sends them — together with the
+  official OPI interpretation rules — to Claude, which returns the chosen code,
+  a confidence score, an Uzbek explanation and ranked alternatives. Runs fully
+  client-side via the Anthropic Messages API (structured output); the user
+  supplies their own API key, stored only in `localStorage`.
 - **Live customs calculator** — CIP value, customs duty (5% / 0% with an ST-1
   certificate toggle), VAT (15%), customs and processing fees are recomputed
   instantly as you type.
@@ -46,6 +54,7 @@ index.html               # page shell + the design template (inert <template>)
 assets/css/app.css        # full-screen layout, fonts, animations
 assets/js/dekla.js        # template engine + app state & customs logic
 assets/js/tiftn.js        # TIFTN search: transliteration, search, code lookup
+assets/js/ai.js           # Claude classifier (Messages API, browser-direct, structured output)
 assets/data/tiftn_index.js  # compact runtime code index (all 16 377 codes)
 assets/data/tiftn_meta.js   # chapter/section notes, exclusions, OPI, units
 data/tiftn_tree.json        # full source tree — all 20 652 nodes (16 377 codes)
