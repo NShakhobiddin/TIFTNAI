@@ -415,7 +415,7 @@
     var selCode = sel ? sel.code : "8471.30.000 0";
     var selName = sel ? TL(sel.name) : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar";
     var selDesc = sel
-      ? (TL(sel.name) + (sel.chapterTitle ? " · " + TL(sel.chapterTitle) : ""))
+      ? (TL(sel.path) || TL(sel.name))
       : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar; ularning bloklari; magnit yoki optik o'quv qurilmalari.";
     var selUnit = sel ? (sel.unit || "—") : "—";
     var selConf = (sel && sel.confidence != null) ? sel.confidence : 94;
