@@ -238,9 +238,36 @@
   function units() { return meta ? meta.units_ref : []; }
   function count() { return idx ? idx.e.length : 0; }
 
+  // Case-preserving Cyrillic→Latin for DISPLAY (translit() lowercases for matching).
+  function translitDisplay(s) {
+    if (s == null) return "";
+    var out = "";
+    for (var i = 0; i < s.length; i++) {
+      var c = s[i], l = c.toLowerCase(), has = MAP.hasOwnProperty(l);
+      var m = has ? MAP[l] : c;
+      if (has && c !== l) m = m.charAt(0).toUpperCase() + m.slice(1); // keep capitals
+      out += m;
+    }
+    return out;
+  }
+
+  // Map any code to a 10-digit (terminal/national) code: itself if already
+  // terminal, otherwise the first terminal code under the same prefix.
+  function bestTerminal(code) {
+    if (!isReady()) return code;
+    var d = digits(code);
+    var j = byCode[d];
+    if (j != null && idx.e[j][4] === 1) return code;
+    for (var k = 0; k < idx.e.length; k++) {
+      var e = idx.e[k];
+      if (e[4] === 1 && digits(e[0]).indexOf(d) === 0) return e[0];
+    }
+    return code;
+  }
+
   window.TifTn = {
-    load: load, isReady: isReady, translit: translit, norm: norm,
-    search: search, get: get, siblings: siblings, applicableNotes: applicableNotes,
-    opi: opi, units: units, count: count
+    load: load, isReady: isReady, translit: translit, translitDisplay: translitDisplay, norm: norm,
+    search: search, get: get, siblings: siblings, bestTerminal: bestTerminal,
+    applicableNotes: applicableNotes, opi: opi, units: units, count: count
   };
 })();

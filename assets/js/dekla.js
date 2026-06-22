@@ -13,7 +13,7 @@
     q: "", results: [], selected: null, tiftnLoading: false,
     // AI classification
     productName: "", productDesc: "", material: "", usage: "", feature: "",
-    aiLoading: false, aiError: "", aiResult: null,
+    aiLoading: false, aiError: "", aiResult: null, noteOpen: false,
     // uploads
     imageFiles: [], imageThumbs: [], excelName: "", excelRows: null, docName: ""
   };
@@ -138,7 +138,7 @@
 
   function selectCode(code) {
     var sel = tiftnReady() ? window.TifTn.get(code) : { code: code };
-    setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) }; });
+    setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]), noteOpen: false }; });
   }
 
   /* ---------------- AI classification (Qwen via Worker) ---------------- */
@@ -156,11 +156,13 @@
   }
 
   // Land on the TIFTN result screen with a classification result.
+  // The code is anchored to a 10-digit (terminal/national) code.
   function finishResult(res) {
-    var sel = (tiftnReady() && window.TifTn.get(res.code)) || { code: res.code, name: res.name || "", path: "", chapterTitle: "", unit: "" };
+    var code = (tiftnReady() && window.TifTn.bestTerminal) ? window.TifTn.bestTerminal(res.code) : res.code;
+    var sel = (tiftnReady() && window.TifTn.get(code)) || { code: code, name: res.name || "", path: "", chapterTitle: "", unit: "" };
     sel = Object.assign({}, sel, { confidence: res.confidence, reasoning: res.reasoning });
     setState(function (p) {
-      return { aiLoading: false, aiResult: res, selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]) };
+      return { aiLoading: false, aiResult: res, selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]), noteOpen: false };
     });
   }
 
@@ -178,6 +180,14 @@
   }
 
   function ensureTiftn() { return tiftnReady() ? Promise.resolve() : window.TifTn.load(); }
+
+  // Candidates for classification — prefer 10-digit (terminal/national) codes so
+  // detection lands on a full code, not a 4/6-digit heading.
+  function detectCandidates(query) {
+    var all = tiftnReady() ? window.TifTn.search(query, 40) : [];
+    var term = all.filter(function (c) { return c.terminal; });
+    return (term.length >= 3 ? term : all).slice(0, 20);
+  }
 
   // Classify a list of real DB candidates: AI when configured (grounded to the
   // DB), otherwise the best local match. Always resolves with a usable result.
@@ -216,7 +226,7 @@
     });
     var candidates = [];
     phase(0, 550, ensureTiftn)
-      .then(function () { return phase(1, 650, function () { candidates = window.TifTn.search(query, 20); }); })
+      .then(function () { return phase(1, 650, function () { candidates = detectCandidates(query); }); })
       .then(function () {
         if (!candidates.length) throw new Error("Mos kod topilmadi. Boshqacha yozib ko'ring.");
         return phase(2, 0, function () { return classifyCandidates(product, candidates); });
@@ -273,7 +283,7 @@
       .then(function () { return phase(1, 0, function () { return window.DeklaAI.describeImage(state.imageFiles); }); })
       .then(function (d) {
         info = d;
-        return phase(2, 650, function () { candidates = window.TifTn.search(d.keywords || d.name, 20); });
+        return phase(2, 650, function () { candidates = detectCandidates(d.keywords || d.name); });
       })
       .then(function () {
         if (!candidates.length) throw new Error("Rasmdan TIFTN kodi topilmadi" + (info && info.name ? " (" + info.name + ")" : "") + ".");
@@ -335,7 +345,7 @@
       })
       .then(ensureTiftn)
       .then(function () {
-        candidates = window.TifTn.search(name, 20);
+        candidates = detectCandidates(name);
         if (!candidates.length) throw new Error("Excel tovari uchun mos kod topilmadi: " + name);
         return phase(2, 0, function () { return classifyCandidates({ name: name, desc: "Excel fayldan", material: "", usage: "" }, candidates); });
       })
@@ -390,10 +400,12 @@
     var dot = function (i) { return s.onb === i ? "#1ca354" : "#cfd7e3"; };
 
     // ---- TIFTN search results (with per-row pick handlers) ----
+    // TL: Cyrillic → Latin for display (the DB is stored in Cyrillic).
+    var TL = (tiftnReady() && window.TifTn.translitDisplay) ? window.TifTn.translitDisplay : function (x) { return x || ""; };
     var pickOf = function (code) { return function () { selectCode(code); }; };
     var results = (s.results || []).map(function (r) {
-      return { code: r.code, name: r.name, path: r.path, unit: r.unit || "—",
-        chapterTitle: r.chapterTitle || "", pick: pickOf(r.code) };
+      return { code: r.code, name: TL(r.name), path: TL(r.path), unit: r.unit || "—",
+        chapterTitle: TL(r.chapterTitle || ""), pick: pickOf(r.code) };
     });
     var hasQuery = !!(s.q && s.q.trim());
 
@@ -401,9 +413,9 @@
     var sel = s.selected;
     var aiOn = !!s.aiResult;
     var selCode = sel ? sel.code : "8471.30.000 0";
-    var selName = sel ? sel.name : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar";
+    var selName = sel ? TL(sel.name) : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar";
     var selDesc = sel
-      ? (sel.name + (sel.chapterTitle ? " · " + sel.chapterTitle : ""))
+      ? (TL(sel.name) + (sel.chapterTitle ? " · " + TL(sel.chapterTitle) : ""))
       : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar; ularning bloklari; magnit yoki optik o'quv qurilmalari.";
     var selUnit = sel ? (sel.unit || "—") : "—";
     var selConf = (sel && sel.confidence != null) ? sel.confidence : 94;
@@ -427,7 +439,7 @@
         if (seen[a.code]) return; seen[a.code] = 1;
         var info = tiftnReady() ? window.TifTn.get(a.code) : null;
         var c = a.confidence != null ? a.confidence : 50;
-        alts.push({ code: a.code, name: (info && info.name) || a.note || "—", pct: c + "%",
+        alts.push({ code: a.code, name: TL((info && info.name) || a.note || "—"), pct: c + "%",
           bg: confBg(c), color: confColor(c), rowBg: "#ffffff", pick: pickOf(a.code) });
       });
     } else if (sel && tiftnReady()) {
@@ -435,14 +447,26 @@
       var altBg = ["#e6f6ec", "#e6f6ec", "#fef0e0", "#fef0e0", "#fdeaea"];
       var altColor = ["#1a8c44", "#1a8c44", "#c9821a", "#c9821a", "#d84a4a"];
       var sibs = window.TifTn.siblings(sel.code, 4);
-      alts.push({ code: sel.code, name: sel.name, pct: "94%", bg: "#e6f6ec", color: "#1a8c44",
+      alts.push({ code: sel.code, name: selName, pct: "94%", bg: "#e6f6ec", color: "#1a8c44",
         rowBg: "#f3fbf6", pick: pickOf(sel.code) });
       for (var ai = 0; ai < sibs.length; ai++) {
-        alts.push({ code: sibs[ai].code, name: sibs[ai].name, pct: altPct[ai + 1] || "40%",
+        alts.push({ code: sibs[ai].code, name: TL(sibs[ai].name), pct: altPct[ai + 1] || "40%",
           bg: altBg[ai + 1] || "#fdeaea", color: altColor[ai + 1] || "#d84a4a",
           rowBg: "#ffffff", pick: pickOf(sibs[ai].code) });
       }
     }
+
+    // ---- official TIFTN note (izoh): Latin, short preview, expandable ----
+    var noteLat = "";
+    if (sel && tiftnReady() && window.TifTn.applicableNotes) {
+      var nz = window.TifTn.applicableNotes(sel.code);
+      var parts = [].concat(nz.chapterNotes || [], nz.sectionNotes || [], nz.exclusions || []);
+      var raw = parts.map(function (n) { return typeof n === "string" ? n : (n && (n.text || n.note)) || ""; })
+        .filter(Boolean).join("\n\n");
+      noteLat = raw ? TL(raw) : "";
+    }
+    var noteOpen = !!s.noteOpen;
+    var notePreview = noteLat.length > 150 ? noteLat.slice(0, 150).replace(/\s+\S*$/, "") + "…" : noteLat;
 
     return {
       isSplash: sc === "splash", isLogin: sc === "login", isSms: sc === "sms", isOnb: sc === "onb",
@@ -473,6 +497,8 @@
       noResults: hasQuery && !s.tiftnLoading && results.length === 0,
       selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
       selConfPct: selConfPct, selReasoning: selReasoning,
+      hasNote: !!noteLat, noteOpen: noteOpen, selNote: noteLat, selNotePreview: notePreview,
+      noteToggleLabel: noteOpen ? "Yopish" : "To'liq",
       alts: alts, hasAlts: alts.length > 0,
       // AI classification
       productName: s.productName || "",
@@ -501,6 +527,7 @@
         runAI: runAI, runImageAI: runImageAI, runExcelAI: runExcelAI,
         pickImage: pickImage, pickExcel: pickExcel, pickDoc: pickDoc,
         back: back, nextOnb: nextOnb, toggleCert: function () { setState(function (p) { return { cert: !p.cert }; }); },
+        toggleNote: function () { setState(function (p) { return { noteOpen: !p.noteOpen }; }); },
         splash: go("splash"), login: go("login"), sms: go("sms"), onb: go("onb"), dash: go("dash"),
         tezkor: go("tezkor"), new: go("new"), product: go("product"), image: go("image"), excel: go("excel"),
         hujjat: go("hujjat"), ai: go("ai"), tiftn: go("tiftn"), alt: go("alt"), value: go("value"),
