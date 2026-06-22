@@ -14,6 +14,8 @@
     // AI classification
     productName: "", productDesc: "", material: "", usage: "", feature: "",
     aiLoading: false, aiError: "", aiResult: null, noteOpen: false,
+    // AI-generated clarifying questions
+    aiQuestions: [], aiAnswers: {}, candidates: [], productCtx: null,
     // uploads
     imageFiles: [], imageThumbs: [], excelName: "", excelRows: null, docName: ""
   };
@@ -212,27 +214,90 @@
     setState({ aiLoading: false, aiError: (e && e.message) || "Tahlil xatosi." });
   }
 
-  function runAI() {
-    var name = (state.productName || "").trim();
-    var desc = (state.productDesc || "").trim();
-    var query = [name, desc, state.material, state.usage, state.feature].filter(Boolean).join(" ").trim();
-    if (!query) { setState({ aiError: "Avval tovar nomini kiriting yoki savollarga javob bering." }); return; }
-    var product = { name: name || state.material || query, desc: desc, material: state.material || "", usage: state.usage || "" };
+  // Fold the answered AI questions into the product description for classify.
+  function withAnswers(product) {
+    var ans = state.aiAnswers || {};
+    var qa = (state.aiQuestions || []).map(function (q, i) {
+      return ans[i] ? (q.question + " — " + ans[i]) : "";
+    }).filter(Boolean).join("; ");
+    return Object.assign({}, product, { desc: [product.desc, qa].filter(Boolean).join(". ") });
+  }
+
+  // Direct classify (no questions) — used when AI is off, or from Excel.
+  function goToClassify(product, query) {
     var useAI = aiHas();
     setSilent({ aiLoading: true, aiError: "" });
     Overlay.show({
       title: useAI ? "AI tahlil qilmoqda" : "TIFTN aniqlanmoqda",
-      subtitle: useAI ? "Eng mos TIFTN kodi tanlanmoqda" : "Lokal baza bo'yicha qidirilmoqda",
-      steps: ["TIFTN bazasi tayyorlanmoqda", "Nomzod kodlar qidirilmoqda", useAI ? "AI eng mos kodni tanlamoqda" : "Eng mos kod tanlanmoqda"]
+      subtitle: "Eng mos TIFTN kodi tanlanmoqda",
+      steps: ["TIFTN bazasi tayyorlanmoqda", useAI ? "AI eng mos kodni tanlamoqda" : "Eng mos kod tanlanmoqda"]
     });
-    var candidates = [];
-    phase(0, 550, ensureTiftn)
-      .then(function () { return phase(1, 650, function () { candidates = detectCandidates(query); }); })
+    var cands = [];
+    phase(0, 450, ensureTiftn)
+      .then(function () { return phase(1, 0, function () {
+        cands = detectCandidates(query);
+        if (!cands.length) throw new Error("Mos kod topilmadi. Boshqacha yozib ko'ring.");
+        return classifyCandidates(product, cands);
+      }); })
+      .then(function (res) { return finishWithOverlay(res, 2); })
+      .catch(failOverlay);
+  }
+
+  // Text flow: from the product screen → AI generates its own questions, then
+  // lands on the questions screen. No AI → classify directly.
+  function genQuestions() {
+    var name = (state.productName || "").trim();
+    var desc = (state.productDesc || "").trim();
+    if (!name && !desc) { setState({ aiError: "Avval tovar nomini kiriting." }); return; }
+    var query = [name, desc].filter(Boolean).join(" ");
+    var product = { name: name || query, desc: desc };
+    setSilent({ aiError: "", aiAnswers: {}, productCtx: product });
+
+    if (!aiHas()) { goToClassify(product, query); return; }
+
+    setSilent({ aiLoading: true });
+    Overlay.show({
+      title: "AI savollar tayyorlamoqda",
+      subtitle: "Tovaringizga mos savollar tuzilmoqda",
+      steps: ["TIFTN bazasi tayyorlanmoqda", "Nomzod kodlar qidirilmoqda", "AI savollar tuzmoqda"]
+    });
+    var cands = [];
+    phase(0, 450, ensureTiftn)
+      .then(function () { return phase(1, 500, function () { cands = detectCandidates(query); }); })
       .then(function () {
-        if (!candidates.length) throw new Error("Mos kod topilmadi. Boshqacha yozib ko'ring.");
-        return phase(2, 0, function () { return classifyCandidates(product, candidates); });
+        if (!cands.length) throw new Error("Mos kod topilmadi. Boshqacha yozib ko'ring.");
+        return phase(2, 0, function () { return window.DeklaAI.askQuestions(product, cands).catch(function () { return []; }); });
       })
-      .then(function (res) { return finishWithOverlay(res, 3); })
+      .then(function (qs) {
+        Overlay.setStep(3);
+        return delay(300).then(function () {
+          Overlay.hide();
+          setState(function (p) { return { aiLoading: false, aiQuestions: qs || [], aiAnswers: {}, candidates: cands, screen: "ai", stack: p.stack.concat([p.screen]) }; });
+        });
+      })
+      .catch(failOverlay);
+  }
+
+  // Questions screen → classify using stored candidates + the user's answers.
+  function runAI() {
+    var product = state.productCtx || { name: (state.productName || "").trim(), desc: (state.productDesc || "").trim() };
+    var prod = withAnswers(product);
+    var query = [prod.name, prod.desc].filter(Boolean).join(" ");
+    setSilent({ aiLoading: true, aiError: "" });
+    var useAI = aiHas();
+    Overlay.show({
+      title: useAI ? "AI tahlil qilmoqda" : "TIFTN aniqlanmoqda",
+      subtitle: "Javoblaringiz asosida eng mos kod tanlanmoqda",
+      steps: ["Javoblar hisobga olinmoqda", useAI ? "AI eng mos kodni tanlamoqda" : "Eng mos kod tanlanmoqda"]
+    });
+    var cands = [];
+    phase(0, 450, ensureTiftn)
+      .then(function () { return phase(1, 0, function () {
+        cands = (state.candidates && state.candidates.length) ? state.candidates : detectCandidates(query);
+        if (!cands.length) throw new Error("Mos kod topilmadi. Boshqacha yozib ko'ring.");
+        return classifyCandidates(prod, cands);
+      }); })
+      .then(function (res) { return finishWithOverlay(res, 2); })
       .catch(failOverlay);
   }
 
@@ -268,31 +333,37 @@
     });
   }
 
-  // Image → vision describe → classify (with a visible, animated analysis)
+  // Image → AI reads the photo → generates its own questions → questions screen.
   function runImageAI() {
     if (!state.imageFiles || !state.imageFiles.length) { setState({ aiError: "Avval rasm tanlang." }); return; }
     if (!aiHas()) { setState({ aiError: "Rasm tahlili uchun AI server (Worker) ulanishi kerak." }); return; }
     setSilent({ aiLoading: true, aiError: "" });
     Overlay.show({
       title: "Rasm tahlil qilinmoqda",
-      subtitle: "AI rasmni o'qib, TIFTN kodini aniqlamoqda",
+      subtitle: "AI rasmni o'qib, savollar tuzmoqda",
       image: (state.imageThumbs && state.imageThumbs[0]) || null,
-      steps: ["Rasm tayyorlanmoqda", "AI rasmni ko'rib chiqmoqda", "TIFTN bazasidan qidirilmoqda", "Eng mos kod tanlanmoqda"]
+      steps: ["Rasm tayyorlanmoqda", "AI rasmni ko'rib chiqmoqda", "Nomzod kodlar qidirilmoqda", "AI savollar tuzmoqda"]
     });
-    var info = null, candidates = [];
+    var info = null, cands = [];
     phase(0, 500, ensureTiftn)
       .then(function () { return phase(1, 0, function () { return window.DeklaAI.describeImage(state.imageFiles); }); })
       .then(function (d) {
         info = d;
-        return phase(2, 650, function () { candidates = detectCandidates(d.keywords || d.name); });
+        return phase(2, 650, function () { cands = detectCandidates(d.keywords || d.name); });
       })
       .then(function () {
-        if (!candidates.length) throw new Error("Rasmdan TIFTN kodi topilmadi" + (info && info.name ? " (" + info.name + ")" : "") + ".");
-        return phase(3, 0, function () {
-          return classifyCandidates({ name: info.name, desc: "rasm orqali aniqlangan", material: state.material || "", usage: state.usage || "" }, candidates);
+        if (!cands.length) throw new Error("Rasmdan TIFTN kodi topilmadi" + (info && info.name ? " (" + info.name + ")" : "") + ".");
+        var product = { name: info.name, desc: "rasm orqali aniqlangan", keywords: info.keywords };
+        setSilent({ productCtx: product });
+        return phase(3, 0, function () { return window.DeklaAI.askQuestions(product, cands).catch(function () { return []; }); });
+      })
+      .then(function (qs) {
+        Overlay.setStep(4);
+        return delay(300).then(function () {
+          Overlay.hide();
+          setState(function (p) { return { aiLoading: false, aiQuestions: qs || [], aiAnswers: {}, candidates: cands, screen: "ai", stack: p.stack.concat([p.screen]) }; });
         });
       })
-      .then(function (res) { return finishWithOverlay(res, 4); })
       .catch(failOverlay);
   }
 
@@ -482,6 +553,17 @@
     var noteOpen = !!s.noteOpen;
     var notePreview = noteLat.length > 150 ? noteLat.slice(0, 150).replace(/\s+\S*$/, "") + "…" : noteLat;
 
+    // ---- AI-generated clarifying questions (dynamic selects) ----
+    var aiQuestions = (s.aiQuestions || []).map(function (q, i) {
+      return {
+        question: q.question,
+        options: q.options || [],
+        onAnswer: (function (idx) {
+          return function (e) { var a = Object.assign({}, state.aiAnswers); a[idx] = e.target.value; setSilent({ aiAnswers: a }); };
+        })(i)
+      };
+    });
+
     return {
       isSplash: sc === "splash", isLogin: sc === "login", isSms: sc === "sms", isOnb: sc === "onb",
       isDash: sc === "dash", isTezkor: sc === "tezkor", isNew: sc === "new", isProduct: sc === "product",
@@ -517,7 +599,8 @@
       // AI classification
       productName: s.productName || "",
       aiLoading: s.aiLoading, aiError: s.aiError || "", hasAiError: !!s.aiError,
-      aiBtn: s.aiLoading ? "AI tahlil qilmoqda…" : "AI bilan aniqlash",
+      aiBtn: s.aiLoading ? "AI tahlil qilmoqda…" : "Natijani ko'rsatish",
+      aiQuestions: aiQuestions, hasQuestions: aiQuestions.length > 0,
       // uploads
       imageThumbs: (s.imageThumbs || []).map(function (u) { return { url: u }; }),
       hasImages: (s.imageThumbs || []).length > 0,
@@ -538,7 +621,7 @@
         onMaterial: function (e) { setSilent({ material: e.target.value }); },
         onUsage: function (e) { setSilent({ usage: e.target.value }); },
         onFeature: function (e) { setSilent({ feature: e.target.value }); },
-        runAI: runAI, runImageAI: runImageAI, runExcelAI: runExcelAI,
+        runAI: runAI, genQuestions: genQuestions, runImageAI: runImageAI, runExcelAI: runExcelAI,
         pickImage: pickImage, pickExcel: pickExcel, pickDoc: pickDoc,
         back: back, nextOnb: nextOnb, toggleCert: function () { setState(function (p) { return { cert: !p.cert }; }); },
         toggleNote: function () { setState(function (p) { return { noteOpen: !p.noteOpen }; }); },

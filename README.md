@@ -27,6 +27,10 @@ screens fill the viewport like a real mobile app.
   (e.g. `paxta` finds `пахта`) via transliteration. Picking a result fills the
   TIFTN result screen with the real code, description and **real alternative
   codes** (final/terminal siblings under the same heading).
+- **AI-generated clarifying questions** — instead of a fixed form, Claude reads
+  the product name (or the photo) plus the candidate codes and writes its own
+  2–4 questions to disambiguate; your answers are folded into the classification.
+  Excel uploads skip the questions and classify directly.
 - **AI code classification (Claude)** — on the "AI savollar" screen, enter a
   product name/description and Dekla calls **Claude (`claude-opus-4-8`)** to pick
   the best TIFTN code. The model is grounded in real data: the app first searches

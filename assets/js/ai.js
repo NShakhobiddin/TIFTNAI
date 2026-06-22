@@ -157,6 +157,60 @@
     });
   }
 
+  /* ---- AI-generated clarifying questions (no fixed template) ---- */
+  var QUESTIONS_SCHEMA = {
+    type: "object",
+    properties: {
+      questions: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            question: { type: "string" },
+            options: { type: "array", items: { type: "string" } }
+          },
+          required: ["question", "options"],
+          additionalProperties: false
+        }
+      }
+    },
+    required: ["questions"],
+    additionalProperties: false
+  };
+
+  function questionsPrompt(product, candidates) {
+    var cand = (candidates || []).slice(0, 15).map(function (c, i) {
+      return (i + 1) + ". " + c.code + " — " + c.name;
+    }).join("\n");
+    return [
+      "TOVAR: " + (product.name || product.keywords || "—") + (product.desc ? " (" + product.desc + ")" : ""),
+      "",
+      "Ushbu tovar uchun mumkin bo'lgan TIFTN nomzod kodlar:",
+      cand,
+      "",
+      "VAZIFA: yuqoridagi nomzodlardan to'g'ri TIFTN kodini ajratish uchun foydalanuvchiga 2-4 ta qisqa, " +
+      "ANIQ savol ber. Har bir savol AYNAN shu tovar va nomzod kodlar farqiga qarab bo'lsin (masalan material, " +
+      "tarkibi, vazifasi, o'lchovi, quvvati — qaysi biri kodni farqlasa). Umumiy/shablon savol berma. " +
+      "Har bir savolga 2-4 ta aniq variant ber. Savol va variantlar o'zbekcha (lotin alifbosida) bo'lsin."
+    ].join("\n");
+  }
+
+  // Returns an array of {question, options[]}.
+  function askQuestions(product, candidates) {
+    if (!configured()) return Promise.reject(new Error("AI sozlanmagan."));
+    var body = {
+      model: MODEL,
+      max_tokens: 700,
+      system: "Sen O'zbekiston bojxonasi TIFTN tasnifi bo'yicha mutaxassissan. Tovarni to'g'ri tasniflash uchun aniqlovchi savollar tuzasan.",
+      messages: [{ role: "user", content: questionsPrompt(product, candidates) }],
+      output_config: { format: { type: "json_schema", schema: QUESTIONS_SCHEMA } }
+    };
+    return postMessages(body).then(function (data) {
+      var parsed = extractJson(firstText(data)) || {};
+      return (parsed.questions || []).filter(function (q) { return q && q.question && (q.options || []).length; });
+    });
+  }
+
   /* ---- image (vision) → product description ---- */
   function fileToImageBlock(file) {
     return new Promise(function (resolve, reject) {
@@ -203,7 +257,7 @@
   }
 
   window.DeklaAI = {
-    classify: classify, describeImage: describeImage,
+    classify: classify, askQuestions: askQuestions, describeImage: describeImage,
     configured: configured, endpoint: endpoint, model: MODEL
   };
 })();

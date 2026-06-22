@@ -224,7 +224,7 @@
           <div style="font-size:13px;font-weight:600;color:#3a455c;margin:0 0 8px">Ishlatilish sohasi</div>
           <select style="width:100%;background:#fff;border:1px solid #dde3ee;border-radius:13px;padding:14px 15px;font-size:15px;color:#14284c;font-family:inherit;outline:none;margin-bottom:18px;appearance:none"><option>Sohani tanlang</option><option>Santexnika, HVAC</option><option>Maishiy texnika</option><option>Sanoat</option></select>
           <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:18px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Aniq va to'liq ma'lumotlar hisob-kitob aniqligini ta'minlaydi.</div></div>
-          <button onclick="{{ h.ai }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+          <button onclick="{{ h.genQuestions }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
         </div>
       </sc-if>
 
@@ -276,32 +276,27 @@
             <div style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:15px;padding:15px"><div style="width:42px;height:42px;border-radius:12px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"></path><path d="M14 2v6h6"></path></svg></div><div style="flex:1"><div style="font-size:14px;font-weight:700;color:#14284c">Texnik pasport</div><div style="font-size:11.5px;color:#8b94a6;margin-top:1px">Texnik pasport yoki ko'rsatma hujjati</div></div><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12"></path></svg></div>
           </div>
           <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:18px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="M9 12l2 2 4-4"></path></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Hujjatlar yuklansa, tahlil aniqligi va ishonchliligi oshadi.</div></div>
-          <button onclick="{{ h.ai }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
+          <button onclick="{{ h.product }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Davom etish <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
         </div>
       </sc-if>
 
       <!-- ============ AI QUESTIONS ============ -->
       <sc-if value="{{ isAi }}" hint-placeholder-val="{{ false }}">
         <div data-screen-label="AI savollar" style="padding:0 18px 30px;opacity:1">
-          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 5px">AI savollar formasi</h1>
-          <p style="font-size:13.5px;color:#7c879b;margin:0 0 22px;line-height:1.5">TIFTN kodini aniq aniqlash uchun quyidagi savollarga javob bering.</p>
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 5px">AI savollari</h1>
+          <p style="font-size:13.5px;color:#7c879b;margin:0 0 22px;line-height:1.5">Tovaringizga qarab AI quyidagi savollarni tuzdi — javob bersangiz, kod aniqroq topiladi.</p>
+          <sc-if value="{{ hasQuestions }}"><sc-for list="{{ aiQuestions }}" as="q">
           <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px;margin-bottom:13px">
-            <div style="font-size:14px;font-weight:700;color:#14284c;margin-bottom:11px;line-height:1.4">1. Tovar qaysi materialdan tayyorlangan?</div>
-            <select onchange="{{ h.onMaterial }}" style="width:100%;background:#f7f9fc;border:1px solid #dde3ee;border-radius:11px;padding:13px 14px;font-size:14px;color:#14284c;font-family:inherit;outline:none;appearance:none"><option>Tanlang</option><option>Plastmassa</option><option>Metall</option><option>Mato</option><option>Aralash</option></select>
-            <div style="font-size:11px;color:#9aa4b6;margin-top:9px;line-height:1.45">Bu savol tovarni to'g'ri guruhga ajratish uchun kerak.</div>
+            <div style="font-size:14px;font-weight:700;color:#14284c;margin-bottom:11px;line-height:1.4">{{ q.question }}</div>
+            <select onchange="{{ q.onAnswer }}" style="width:100%;background:#f7f9fc;border:1px solid #dde3ee;border-radius:11px;padding:13px 14px;font-size:14px;color:#14284c;font-family:inherit;outline:none;appearance:none"><option>Tanlang</option><sc-for list="{{ q.options }}" as="opt"><option>{{ opt }}</option></sc-for></select>
           </div>
-          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px;margin-bottom:13px">
-            <div style="font-size:14px;font-weight:700;color:#14284c;margin-bottom:11px;line-height:1.4">2. Tovar qanday ishlatiladi?</div>
-            <select onchange="{{ h.onUsage }}" style="width:100%;background:#f7f9fc;border:1px solid #dde3ee;border-radius:11px;padding:13px 14px;font-size:14px;color:#14284c;font-family:inherit;outline:none;appearance:none"><option>Tanlang</option><option>Ma'lumotlarni qayta ishlash</option><option>Maishiy maqsadda</option><option>Sanoat uskunasi</option></select>
-          </div>
-          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:17px;margin-bottom:16px">
-            <div style="font-size:14px;font-weight:700;color:#14284c;margin-bottom:11px;line-height:1.4">3. Tovarning asosiy xususiyati nima?</div>
-            <select onchange="{{ h.onFeature }}" style="width:100%;background:#f7f9fc;border:1px solid #dde3ee;border-radius:11px;padding:13px 14px;font-size:14px;color:#14284c;font-family:inherit;outline:none;appearance:none"><option>Tanlang</option><option>Avtomatik qayta ishlash</option><option>Saqlash qurilmasi</option><option>Boshqaruv bloki</option></select>
-          </div>
+          </sc-for></sc-if>
+          <sc-if value="{{ !hasQuestions }}">
+          <div style="display:flex;gap:11px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:14px;padding:14px;margin-bottom:16px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 16v-4M12 8h.01"></path><circle cx="12" cy="12" r="10"></circle></svg><div style="font-size:12.5px;color:#6a7689;line-height:1.5">Qo'shimcha savol talab etilmadi. Natijani ko'rish uchun pastdagi tugmani bosing.</div></div>
+          </sc-if>
           <sc-if value="{{ hasAiError }}">
           <div style="background:#fdeaea;border:1px solid #f6cccc;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:12.5px;color:#c0392b;line-height:1.45">{{ aiError }}</div>
           </sc-if>
-          <button onclick="{{ h.tiftn }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#fff;color:#14284c;border:1px solid #d9e0ec;border-radius:15px;padding:14px;font-size:14.5px;font-weight:600;font-family:inherit;cursor:pointer;margin-bottom:11px"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#7c879b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.1 9a3 3 0 015.8 1c0 2-3 3-3 3"></path><path d="M12 17h.01"></path></svg>Bilmayman (qo'lda)</button>
           <button onclick="{{ h.runAI }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">{{ aiBtn }} <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
         </div>
       </sc-if>
