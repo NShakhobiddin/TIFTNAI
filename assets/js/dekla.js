@@ -196,8 +196,9 @@
     return window.DeklaAI.classify(product, candidates, window.TifTn.opi())
       .then(function (res) { return groundResult(res, candidates); })
       .catch(function (e) {
+        // Fall back to the local DB silently — no scary technical error in the UI.
         console.warn("[Dekla] AI fallback:", e && e.message);
-        return localResult(candidates, "Lokal baza bo'yicha (AI ulanmadi: " + (e && e.message || "xato") + ").");
+        return localResult(candidates);
       });
   }
 
@@ -414,9 +415,22 @@
     var aiOn = !!s.aiResult;
     var selCode = sel ? sel.code : "8471.30.000 0";
     var selName = sel ? TL(sel.name) : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar";
-    var selDesc = sel
-      ? (TL(sel.path) || TL(sel.name))
-      : "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar; ularning bloklari; magnit yoki optik o'quv qurilmalari.";
+    // short, meaningful description under the code (leaf + nearest parent if short)
+    var selDesc;
+    if (sel) {
+      var segs = (sel.pathArr || []).map(function (x) { return String(x || "").replace(/\s*[:;]\s*$/, "").trim(); }).filter(Boolean);
+      var leaf = segs.length ? segs[segs.length - 1] : (sel.name || "");
+      var d = leaf;
+      if (segs.length > 1 && leaf.length < 38) {
+        var prev = segs[segs.length - 2];
+        if (prev && prev.toLowerCase() !== leaf.toLowerCase()) d = prev + ", " + leaf;
+      }
+      d = TL(d);
+      if (d.length > 80) d = d.slice(0, 80).replace(/\s+\S*$/, "") + "…";
+      selDesc = d || TL(sel.name) || "—";
+    } else {
+      selDesc = "Avtomatik ma'lumotlarni qayta ishlovchi mashinalar.";
+    }
     var selUnit = sel ? (sel.unit || "—") : "—";
     var selConf = (sel && sel.confidence != null) ? sel.confidence : 94;
     var selConfPct = selConf + "%";
