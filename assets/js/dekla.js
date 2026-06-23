@@ -553,14 +553,24 @@
     var noteOpen = !!s.noteOpen;
     var notePreview = noteLat.length > 150 ? noteLat.slice(0, 150).replace(/\s+\S*$/, "") + "…" : noteLat;
 
-    // ---- AI-generated clarifying questions (dynamic selects) ----
+    // ---- AI-generated clarifying questions (tappable option chips) ----
+    var answers = s.aiAnswers || {};
     var aiQuestions = (s.aiQuestions || []).map(function (q, i) {
+      var picked = answers[i];
       return {
         question: q.question,
-        options: q.options || [],
-        onAnswer: (function (idx) {
-          return function (e) { var a = Object.assign({}, state.aiAnswers); a[idx] = e.target.value; setSilent({ aiAnswers: a }); };
-        })(i)
+        options: (q.options || []).map(function (opt) {
+          var on = opt === picked;
+          return {
+            label: opt,
+            bg: on ? "#14284c" : "#f7f9fc",
+            color: on ? "#ffffff" : "#3a455c",
+            border: on ? "#14284c" : "#dde3ee",
+            pick: (function (idx, val) {
+              return function () { var a = Object.assign({}, state.aiAnswers); a[idx] = val; setState({ aiAnswers: a }); };
+            })(i, opt)
+          };
+        })
       };
     });
 
