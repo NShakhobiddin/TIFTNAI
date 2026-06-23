@@ -145,6 +145,7 @@
               <button onclick="{{ h.excel }}" style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:15px 8px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;font-family:inherit"><div style="width:42px;height:42px;border-radius:13px;background:#e9f6ee;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M8 8l8 8M16 8l-8 8"></path></svg></div><span style="font-size:11.5px;font-weight:700;color:#14284c;text-align:center;line-height:1.25">Excel yuklash</span></button>
               <button onclick="{{ h.image }}" style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:15px 8px;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;font-family:inherit"><div style="width:42px;height:42px;border-radius:13px;background:#f0ecfb;display:flex;align-items:center;justify-content:center"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#7c5cd6" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"></path><circle cx="12" cy="13" r="4"></circle></svg></div><span style="font-size:11.5px;font-weight:700;color:#14284c;text-align:center;line-height:1.25">Rasm orqali</span></button>
             </div>
+            <div onclick="{{ h.openCatalog }}" style="display:flex;align-items:center;gap:13px;background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:15px;margin-bottom:22px;cursor:pointer"><div style="width:42px;height:42px;border-radius:13px;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex:none"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18M3 12h18M3 17h18"></path></svg></div><div style="flex:1"><div style="font-size:14.5px;font-weight:700;color:#14284c">TIFTN katalogi</div><div style="font-size:12px;color:#8b94a6;margin-top:2px">Kodlarni ko'rish va o'zingiz tanlash</div></div><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"></path></svg></div>
             <div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:10px">Tezkor qidiruv</div>
             <div onclick="{{ h.tezkor }}" style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #dde3ee;border-radius:14px;padding:14px 15px;margin-bottom:22px;cursor:pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><span style="font-size:14px;color:#9aa4b6">Tovar nomi yoki TIFTN kodi</span></div>
             <div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:10px">Qisqa statistika</div>
@@ -190,6 +191,27 @@
               <div style="display:flex;align-items:center;gap:9px;background:#fff;border:1px solid #e9edf4;border-radius:13px;padding:13px"><span style="font-size:16px">⚙️</span><span style="font-size:12.5px;font-weight:600;color:#3a455c">Metall buyumlar</span></div>
             </div>
             </sc-if>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ TIFTN CATALOG ============ -->
+      <sc-if value="{{ isKatalog }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="TIFTN katalogi" style="opacity:1">
+          <div style="display:flex;align-items:center;padding:2px 16px 14px;position:relative;min-height:34px"><button onclick="{{ h.catBack }}" style="background:#fff;border:1px solid #e9edf4;width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;padding:0"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#14284c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"></path></svg></button><div style="position:absolute;left:0;right:0;text-align:center;font-size:17px;font-weight:700;color:#14284c;pointer-events:none">TIFTN katalogi</div></div>
+          <div style="padding:0 18px 30px">
+            <div style="display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #dde3ee;border-radius:14px;padding:14px 15px;margin-bottom:16px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#9aa4b6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input value="{{ catQuery }}" oninput="{{ h.catSearch }}" placeholder="Kod yoki tovar nomi bo'yicha qidirish" style="flex:1;border:none;outline:none;font-size:14px;color:#14284c;font-family:inherit"></div>
+            <sc-if value="{{ catLoading }}"><div style="text-align:center;padding:22px;color:#8b94a6;font-size:13px">Baza yuklanmoqda…</div></sc-if>
+            <sc-if value="{{ catSearching }}"><div style="font-size:12.5px;color:#7c879b;margin-bottom:10px">Qidiruv natijalari — kodni tanlash uchun bosing</div></sc-if>
+            <sc-if value="{{ !catSearching }}"><div style="display:flex;align-items:center;gap:7px;font-size:13px;font-weight:700;color:#14284c;margin-bottom:10px;line-height:1.4"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M3 7h18M3 12h18M3 17h18"></path></svg>{{ catTitle }}</div></sc-if>
+            <sc-if value="{{ hasCat }}">
+            <div style="background:#fff;border:1px solid #e9edf4;border-radius:15px;overflow:hidden">
+              <sc-for list="{{ catList }}" as="c">
+              <div onclick="{{ c.tap }}" style="display:flex;align-items:center;gap:11px;padding:13px 14px;border-top:1px solid #f0f2f7;cursor:pointer"><span style="font-size:12px;font-weight:700;color:#1ca354;font-family:monospace;white-space:nowrap;flex:none">{{ c.code }}</span><span style="flex:1;min-width:0;font-size:13px;color:#3a455c;line-height:1.35">{{ c.name }}</span><sc-if value="{{ c.isLeaf }}"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M20 6L9 17l-5-5"></path></svg></sc-if><sc-if value="{{ !c.isLeaf }}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c4cbd8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M9 18l6-6-6-6"></path></svg></sc-if></div>
+              </sc-for>
+            </div>
+            </sc-if>
+            <sc-if value="{{ noCat }}"><div style="text-align:center;padding:26px 12px;color:#8b94a6;font-size:13px;line-height:1.5">Hech narsa topilmadi.</div></sc-if>
           </div>
         </div>
       </sc-if>

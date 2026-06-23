@@ -42,6 +42,9 @@ screens fill the viewport like a real mobile app.
   holds the Anthropic API key as a secret, so the key is never exposed
   client-side. Set your Worker URL via `window.DEKLA_AI_ENDPOINT` in `index.html`
   — see `worker/README.md` for deployment.
+- **TIFTN catalog (browse & manual pick)** — a dedicated section to explore the
+  classifier yourself: drill down the hierarchy (guruh → tovar pozitsiyasi → …
+  → 10-digit national code) or search, and tap any final code to select it.
 - **Always-on code detection** — classification works even without AI: if the
   Worker/Claude is unavailable it falls back to the local TIFTN database and still
   returns the best-matching code.

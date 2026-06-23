@@ -11,6 +11,8 @@
     screen: "splash", stack: [], onb: 0, cert: false,
     invoice: 10000, transport: 800, insurance: 200, other: 150, rate: 12600,
     q: "", results: [], selected: null, tiftnLoading: false,
+    // TIFTN catalog (browse + manual pick)
+    catStack: [], catQuery: "", catLoading: false,
     // AI classification
     productName: "", productDesc: "", material: "", usage: "", feature: "",
     aiLoading: false, aiError: "", aiResult: null, noteOpen: false,
@@ -141,6 +143,23 @@
   function selectCode(code) {
     var sel = tiftnReady() ? window.TifTn.get(code) : { code: code };
     setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]), noteOpen: false }; });
+  }
+
+  /* ---------------- TIFTN catalog (browse + manual pick) ---------------- */
+  function openCatalog() {
+    setState(function (p) { return { screen: "katalog", stack: p.stack.concat([p.screen]), catStack: [], catQuery: "", catLoading: !tiftnReady() }; });
+    if (!tiftnReady() && window.TifTn) {
+      window.TifTn.load().then(function () { setState({ catLoading: false }); }).catch(function () { setState({ catLoading: false }); });
+    }
+  }
+  function catSearch(e) { setState({ catQuery: e.target.value }); }
+  function catOpen(code, name) { setState(function (p) { return { catStack: p.catStack.concat([{ code: code, name: name }]), catQuery: "" }; }); }
+  function catBack() {
+    setState(function (p) {
+      if (p.catQuery) return { catQuery: "" };
+      if (p.catStack.length) return { catStack: p.catStack.slice(0, -1) };
+      var st = p.stack.slice(); var prev = st.pop() || "dash"; return { screen: prev, stack: st };
+    });
   }
 
   /* ---------------- AI classification (Qwen via Worker) ---------------- */
@@ -481,6 +500,32 @@
     });
     var hasQuery = !!(s.q && s.q.trim());
 
+    // ---- TIFTN catalog (browse hierarchy + manual pick) ----
+    var catStack = s.catStack || [];
+    var catSearching = !!(s.catQuery && s.catQuery.trim());
+    var catTitle = catStack.length
+      ? (catStack[catStack.length - 1].code + " — " + TL(catStack[catStack.length - 1].name))
+      : "Barcha guruhlar";
+    var catList = [];
+    if (tiftnReady()) {
+      if (catSearching) {
+        catList = window.TifTn.search(s.catQuery, 40).map(function (r) {
+          return { code: r.code, name: TL(r.name), isLeaf: true, tap: pickOf(r.code) };
+        });
+      } else if (!catStack.length) {
+        catList = window.TifTn.chapters().map(function (c) {
+          return { code: c.code, name: TL(c.name), isLeaf: false,
+            tap: (function (code, name) { return function () { catOpen(code, name); }; })(c.code, c.name) };
+        });
+      } else {
+        catList = window.TifTn.children(catStack[catStack.length - 1].code).map(function (r) {
+          var leaf = !!r.terminal;
+          return { code: r.code, name: TL(r.name), isLeaf: leaf,
+            tap: leaf ? pickOf(r.code) : (function (code, name) { return function () { catOpen(code, name); }; })(r.code, r.name) };
+        });
+      }
+    }
+
     // ---- selected code (TIFTN result screen) ----
     var sel = s.selected;
     var aiOn = !!s.aiResult;
@@ -581,6 +626,7 @@
       isTiftn: sc === "tiftn", isAlt: sc === "alt", isValue: sc === "value", isPay: sc === "pay",
       isPermit: sc === "permit", isRisk: sc === "risk", isFinal: sc === "final", isProfile: sc === "profile",
       isHelp: sc === "help", isTariffs: sc === "tariffs", isHisob: sc === "hisob", isSaqlangan: sc === "saqlangan",
+      isKatalog: sc === "katalog",
       showLogoHeader: ["product", "image", "excel", "hujjat", "ai", "tiftn", "alt", "value", "pay", "permit", "risk", "final", "profile"].indexOf(sc) !== -1,
       showBottomNav: ["dash", "hisob", "saqlangan", "profile"].indexOf(sc) !== -1,
       screenBg: sc === "splash" ? "#0e2545" : "#f4f6fb",
@@ -601,6 +647,11 @@
       q: s.q || "", results: results, hasResults: results.length > 0,
       tiftnLoading: s.tiftnLoading, showRecents: !hasQuery && !s.tiftnLoading,
       noResults: hasQuery && !s.tiftnLoading && results.length === 0,
+      // TIFTN catalog
+      catQuery: s.catQuery || "", catList: catList, hasCat: catList.length > 0,
+      catTitle: catTitle, catSearching: catSearching, catLoading: !!s.catLoading,
+      catDrilled: catStack.length > 0,
+      noCat: tiftnReady() && !s.catLoading && catList.length === 0,
       selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
       selConfPct: selConfPct, selReasoning: selReasoning,
       hasNote: !!noteLat, noteOpen: noteOpen, selNote: noteLat, selNotePreview: notePreview,
@@ -626,6 +677,7 @@
       docDisp: s.docName || "",
       h: {
         onSearch: function (e) { runSearch(e.target.value); },
+        openCatalog: openCatalog, catSearch: catSearch, catBack: catBack,
         onProductName: function (e) { setSilent({ productName: e.target.value }); },
         onProductDesc: function (e) { setSilent({ productDesc: e.target.value }); },
         onMaterial: function (e) { setSilent({ material: e.target.value }); },

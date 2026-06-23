@@ -267,9 +267,47 @@
     return code;
   }
 
+  // ---- hierarchy browsing (catalog) ----
+  // Top level: all chapters (guruhlar).
+  function chapters() {
+    if (!isReady() || !idx.ch) return [];
+    var out = [];
+    for (var key in idx.ch) {
+      if (!Object.prototype.hasOwnProperty.call(idx.ch, key)) continue;
+      if (!idx.ch[key]) continue;
+      var n = parseInt(key, 10);
+      if (!n && n !== 0) continue;
+      out.push({ code: (n < 10 ? "0" + n : "" + n), name: idx.ch[key], chapter: n, terminal: false });
+    }
+    out.sort(function (a, b) { return a.chapter - b.chapter; });
+    return out;
+  }
+
+  // Immediate children of a code prefix (next level down the tree).
+  function children(prefix) {
+    if (!isReady()) return [];
+    prefix = digits(prefix || "");
+    var set = Object.create(null), list = [];
+    for (var j = 0; j < idx.e.length; j++) {
+      var cd = digits(idx.e[j][0]);
+      if (cd.length > prefix.length && cd.indexOf(prefix) === 0) { set[cd] = 1; list.push(j); }
+    }
+    var out = [];
+    for (var k = 0; k < list.length; k++) {
+      var ej = list[k], c = digits(idx.e[ej][0]), immediate = true;
+      for (var p = prefix.length + 1; p < c.length; p++) {
+        if (set[c.slice(0, p)]) { immediate = false; break; }
+      }
+      if (immediate) out.push(shape(idx.e[ej], ej));
+    }
+    out.sort(function (a, b) { return digits(a.code) < digits(b.code) ? -1 : 1; });
+    return out;
+  }
+
   window.TifTn = {
     load: load, isReady: isReady, translit: translit, translitDisplay: translitDisplay, norm: norm,
     search: search, get: get, siblings: siblings, bestTerminal: bestTerminal,
+    chapters: chapters, children: children,
     applicableNotes: applicableNotes, opi: opi, units: units, count: count
   };
 })();
