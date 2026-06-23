@@ -474,13 +474,21 @@
       };
     };
 
+    // ---- import-duty rate for the selected code (PP-3818) ----
+    // Real per-code ad valorem rate; falls back to 5% if data unavailable.
+    var dutyInfo = (s.selected && tiftnReady() && window.TifTn.duty)
+      ? window.TifTn.duty(s.selected.code) : null;
+    var dutyAdv = dutyInfo ? (dutyInfo.adv || 0) : 5;
+    var dutyRateText = dutyInfo && window.TifTn.dutyText ? window.TifTn.dutyText(dutyInfo) : (dutyAdv + "%");
+
     var cipUsd = (s.invoice || 0) + (s.transport || 0) + (s.insurance || 0) + (s.other || 0);
     var cipUzs = cipUsd * (s.rate || 0);
-    var boj = s.cert ? 0 : cipUzs * 0.05;
+    // ad valorem part; with an ST-1 certificate the import duty is 0.
+    var boj = s.cert ? 0 : cipUzs * (dutyAdv / 100);
     var qqs = cipUzs * 0.15, aksiz = 0, yigim = cipUzs * 0.003, rasmiy = cipUzs * 0.001;
     var jamiUzs = boj + qqs + aksiz + yigim + rasmiy;
     var payments = [
-      { label: "Bojxona boji", rate: s.cert ? "0%" : "5%", uzs: fmt(boj) },
+      { label: "Bojxona boji", rate: s.cert ? "0%" : (dutyAdv + "%"), uzs: fmt(boj) },
       { label: "QQS", rate: "15%", uzs: fmt(qqs) },
       { label: "Aksiz", rate: "0%", uzs: "0" },
       { label: "Bojxona yig'imi", rate: "0.3%", uzs: fmt(yigim) },
@@ -662,6 +670,10 @@
       noCat: tiftnReady() && !s.catLoading && catList.length === 0,
       selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
       selConfPct: selConfPct, selReasoning: selReasoning,
+      // import-duty rate for the selected code (PP-3818)
+      dutyRateText: dutyRateText, hasDuty: !!dutyInfo, dutyAdvPct: (s.cert ? "0%" : dutyAdv + "%"),
+      dutyFootnote: (dutyInfo && dutyInfo.footnote) ? dutyInfo.footnote : "",
+      hasDutyFootnote: !!(dutyInfo && dutyInfo.footnote),
       hasNote: !!noteLat, noteOpen: noteOpen, selNote: noteLat, selNotePreview: notePreview,
       noteToggleLabel: noteOpen ? "Yopish" : "To'liq",
       alts: alts, hasAlts: alts.length > 0,

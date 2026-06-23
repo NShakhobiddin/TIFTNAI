@@ -61,9 +61,16 @@ screens fill the viewport like a real mobile app.
   wired; manual continue).
 - **Telegram Mini App** — opens inside a Telegram bot via the WebApp SDK
   (`assets/js/telegram.js`): expands, themes, and syncs the Back button.
-- **Live customs calculator** — CIP value, customs duty (5% / 0% with an ST-1
-  certificate toggle), VAT (15%), customs and processing fees are recomputed
-  instantly as you type.
+- **Real import-duty rates (PP-3818)** — every code carries its official import
+  customs-duty rate from Resolution PP-3818. The TIFTN result screen shows the
+  rate (`Import boj stavkasi`), including compound rates (e.g. `15% + 1 USD/kub
+  sm` or `20%, lekin kamida 0.5 USD/dona`), and the customs calculator uses the
+  selected code's real ad-valorem rate instead of a flat 5%. Rates are resolved
+  by longest-matching code prefix and ship as a compact 22 KB runtime index
+  (`assets/data/tiftn_duty.js`).
+- **Live customs calculator** — CIP value, customs duty (the selected code's real
+  rate, or 0% with an ST-1 certificate toggle), VAT (15%), customs and processing
+  fees are recomputed instantly as you type.
 - **Real navigation** with a back stack and a bottom navigation bar.
 - **No build step, no dependencies, no server** — pure HTML, CSS and a small
   vanilla-JS runtime. Opens straight from `file://`.
@@ -88,6 +95,7 @@ assets/js/tiftn.js        # TIFTN search: transliteration, search, code lookup
 assets/js/ai.js           # Claude classifier (Messages API via Worker, structured outputs)
 assets/data/tiftn_index.js  # compact runtime code index (all 16 377 codes)
 assets/data/tiftn_meta.js   # chapter/section notes, exclusions, OPI, units
+assets/data/tiftn_duty.js   # import-duty rates per code (PP-3818), prefix-resolved
 data/tiftn_tree.json        # full source tree — all 20 652 nodes (16 377 codes)
 ```
 

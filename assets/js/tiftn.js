@@ -12,6 +12,7 @@
   var hay = null;     // per-entry normalized latin haystack
   var segLat = null;  // per-segment normalized latin
   var byCode = null;  // codeNorm -> entry index
+  var dutyData = null; // { u:units, r:[ [adv,minUsd,minPerIdx,plusUsd,plusPerIdx,footnote] ], p:{ prefix:rateIdx } }
   var loadingPromise = null;
 
   /* ---- Cyrillic (Uzbek) -> Latin ---- */
@@ -55,9 +56,10 @@
     if (loadingPromise) return loadingPromise;
     loadingPromise = Promise.all([
       loadScript("tiftn_index.js", "__TIFTN_INDEX__"),
-      loadScript("tiftn_meta.js", "__TIFTN_META__")
+      loadScript("tiftn_meta.js", "__TIFTN_META__"),
+      loadScript("tiftn_duty.js", "__TIFTN_DUTY__").catch(function () { return null; })
     ]).then(function (res) {
-        idx = res[0]; meta = res[1];
+        idx = res[0]; meta = res[1]; dutyData = res[2] || null;
         // precompute per-segment latin
         segLat = new Array(idx.seg.length);
         for (var i = 0; i < idx.seg.length; i++) segLat[i] = norm(idx.seg[i]);
@@ -304,10 +306,44 @@
     return out;
   }
 
+  // ---- customs import-duty rate (PP-3818) ----
+  // Resolve a code to its import-duty rate via longest matching prefix.
+  // Returns { adv, minUsd, minPer, plusUsd, plusPer, footnote } or null.
+  function duty(code) {
+    if (!dutyData) return null;
+    var d = digits(code), P = dutyData.p;
+    for (var L = d.length; L >= 2; L--) {
+      var pre = d.slice(0, L);
+      if (P[pre] != null) {
+        var rt = dutyData.r[P[pre]];
+        return {
+          adv: rt[0] || 0,
+          minUsd: rt[1],
+          minPer: dutyData.u[rt[2]] || "",
+          plusUsd: rt[3],
+          plusPer: dutyData.u[rt[4]] || "",
+          footnote: rt[5] || ""
+        };
+      }
+    }
+    return null;
+  }
+
+  // Human-readable rate string (Latin, Uzbek), incl. compound (specific) parts.
+  function dutyText(code) {
+    var r = (code && typeof code === "object") ? code : duty(code);
+    if (!r) return "";
+    var s = (r.adv || 0) + "%";
+    if (r.minUsd != null) s += ", lekin kamida " + r.minUsd + " USD/" + (r.minPer || "birlik");
+    if (r.plusUsd != null) s += " + " + r.plusUsd + " USD/" + (r.plusPer || "birlik");
+    return s;
+  }
+
   window.TifTn = {
     load: load, isReady: isReady, translit: translit, translitDisplay: translitDisplay, norm: norm,
     search: search, get: get, siblings: siblings, bestTerminal: bestTerminal,
     chapters: chapters, children: children,
-    applicableNotes: applicableNotes, opi: opi, units: units, count: count
+    applicableNotes: applicableNotes, opi: opi, units: units, count: count,
+    duty: duty, dutyText: dutyText
   };
 })();
