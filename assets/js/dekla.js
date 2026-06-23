@@ -483,16 +483,20 @@
 
     var cipUsd = (s.invoice || 0) + (s.transport || 0) + (s.insurance || 0) + (s.other || 0);
     var cipUzs = cipUsd * (s.rate || 0);
-    // ad valorem part; with an ST-1 certificate the import duty is 0.
+    // ad valorem import duty; an ST-1 certificate zeroes it.
     var boj = s.cert ? 0 : cipUzs * (dutyAdv / 100);
-    var qqs = cipUzs * 0.15, aksiz = 0, yigim = cipUzs * 0.003, rasmiy = cipUzs * 0.001;
-    var jamiUzs = boj + qqs + aksiz + yigim + rasmiy;
+    var aksiz = 0; // aksiz solig'i — hozircha 0 (ayrim kodlar uchun keyin qo'shiladi)
+    // QQS barcha tovarlarga 12%; bazasi = tovar qiymati + boj + aksiz.
+    var qqs = (cipUzs + boj + aksiz) * 0.12;
+    // Bojxona rasmiylashtirish yig'imi (yagona yig'im).
+    var yigim = cipUzs * 0.002;
+    // Jami bojxona to'lovlari = boj + aksiz + QQS + yig'im.
+    var jamiUzs = boj + aksiz + qqs + yigim;
     var payments = [
       { label: "Bojxona boji", rate: s.cert ? "0%" : (dutyAdv + "%"), uzs: fmt(boj) },
-      { label: "QQS", rate: "15%", uzs: fmt(qqs) },
       { label: "Aksiz", rate: "0%", uzs: "0" },
-      { label: "Bojxona yig'imi", rate: "0.3%", uzs: fmt(yigim) },
-      { label: "Rasmiylashtirish yig'imi", rate: "0.1%", uzs: fmt(rasmiy) }
+      { label: "QQS", rate: "12%", uzs: fmt(qqs) },
+      { label: "Bojxona rasmiylashtirish yig'imi", rate: "0.2%", uzs: fmt(yigim) }
     ];
 
     var sc = s.screen;

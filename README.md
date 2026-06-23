@@ -69,8 +69,9 @@ screens fill the viewport like a real mobile app.
   by longest-matching code prefix and ship as a compact 22 KB runtime index
   (`assets/data/tiftn_duty.js`).
 - **Live customs calculator** — CIP value, customs duty (the selected code's real
-  rate, or 0% with an ST-1 certificate toggle), VAT (15%), customs and processing
-  fees are recomputed instantly as you type.
+  rate, or 0% with an ST-1 certificate toggle), excise, VAT (12%, charged on
+  value + duty + excise) and the customs clearance fee are recomputed instantly
+  as you type. Total = duty + excise + VAT + clearance fee.
 - **Real navigation** with a back stack and a bottom navigation bar.
 - **No build step, no dependencies, no server** — pure HTML, CSS and a small
   vanilla-JS runtime. Opens straight from `file://`.
