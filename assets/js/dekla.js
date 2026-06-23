@@ -541,11 +541,11 @@
       }
     }
 
-    // ---- official TIFTN note (izoh): Latin, short preview, expandable ----
+    // ---- official TIFTN note (izoh): only this product's GROUP (chapter) ----
     var noteLat = "";
     if (sel && tiftnReady() && window.TifTn.applicableNotes) {
       var nz = window.TifTn.applicableNotes(sel.code);
-      var parts = [].concat(nz.chapterNotes || [], nz.sectionNotes || [], nz.exclusions || []);
+      var parts = [].concat(nz.chapterNotes || [], nz.chapterExclusions || []);
       var raw = parts.map(function (n) { return typeof n === "string" ? n : (n && (n.text || n.note)) || ""; })
         .filter(Boolean).join("\n\n");
       noteLat = raw ? TL(raw) : "";

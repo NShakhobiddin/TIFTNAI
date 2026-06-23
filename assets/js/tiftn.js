@@ -207,7 +207,7 @@
   }
 
   function applicableNotes(code) {
-    var empty = { sectionNotes: [], chapterNotes: [], exclusions: [] };
+    var empty = { sectionNotes: [], chapterNotes: [], chapterExclusions: [], sectionExclusions: [], exclusions: [] };
     if (!isReady() || !meta) return empty;
     var j = byCode[digits(code)];
     if (j == null) return empty;
@@ -218,6 +218,8 @@
     return {
       sectionNotes: sec.notes || [],
       chapterNotes: ch.notes || [],
+      chapterExclusions: ch.excl || [],
+      sectionExclusions: sec.excl || [],
       exclusions: (sec.excl || []).concat(ch.excl || [])
     };
   }
