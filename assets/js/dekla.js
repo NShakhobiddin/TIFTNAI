@@ -154,6 +154,7 @@
   }
   function catSearch(e) { setState({ catQuery: e.target.value }); }
   function catOpen(code, name) { setState(function (p) { return { catStack: p.catStack.concat([{ code: code, name: name }]), catQuery: "" }; }); }
+  function catJump(depth) { setState(function (p) { return { catStack: p.catStack.slice(0, depth), catQuery: "" }; }); }
   function catBack() {
     setState(function (p) {
       if (p.catQuery) return { catQuery: "" };
@@ -503,28 +504,33 @@
     // ---- TIFTN catalog (browse hierarchy + manual pick) ----
     var catStack = s.catStack || [];
     var catSearching = !!(s.catQuery && s.catQuery.trim());
-    var catTitle = catStack.length
-      ? (catStack[catStack.length - 1].code + " — " + TL(catStack[catStack.length - 1].name))
-      : "Barcha guruhlar";
+    var catTitle = catStack.length ? TL(catStack[catStack.length - 1].name) : "Barcha guruhlar";
+    var openOf = function (code, name) { return function () { catOpen(code, name); }; };
+    var catItem = function (code, name, leaf, tap) {
+      var L = String(code).replace(/\D/g, "").length;
+      var tag = leaf ? "Kod" : (L <= 2 ? "Guruh" : L <= 4 ? "Pozitsiya" : L <= 6 ? "Subpozitsiya" : "Tarmoq");
+      return {
+        code: code, name: name, isLeaf: leaf, tap: tap, tag: tag,
+        codeBg: leaf ? "#e9f6ee" : "#eef2fb",
+        codeColor: leaf ? "#1a8c44" : "#41527a"
+      };
+    };
     var catList = [];
     if (tiftnReady()) {
       if (catSearching) {
-        catList = window.TifTn.search(s.catQuery, 40).map(function (r) {
-          return { code: r.code, name: TL(r.name), isLeaf: true, tap: pickOf(r.code) };
-        });
+        catList = window.TifTn.search(s.catQuery, 40).map(function (r) { return catItem(r.code, TL(r.name), true, pickOf(r.code)); });
       } else if (!catStack.length) {
-        catList = window.TifTn.chapters().map(function (c) {
-          return { code: c.code, name: TL(c.name), isLeaf: false,
-            tap: (function (code, name) { return function () { catOpen(code, name); }; })(c.code, c.name) };
-        });
+        catList = window.TifTn.chapters().map(function (c) { return catItem(c.code, TL(c.name), false, openOf(c.code, c.name)); });
       } else {
         catList = window.TifTn.children(catStack[catStack.length - 1].code).map(function (r) {
           var leaf = !!r.terminal;
-          return { code: r.code, name: TL(r.name), isLeaf: leaf,
-            tap: leaf ? pickOf(r.code) : (function (code, name) { return function () { catOpen(code, name); }; })(r.code, r.name) };
+          return catItem(r.code, TL(r.name), leaf, leaf ? pickOf(r.code) : openOf(r.code, r.name));
         });
       }
     }
+    var catCrumbs = [{ label: "Barchasi", jump: function () { catJump(0); } }];
+    catStack.forEach(function (c, i) { catCrumbs.push({ label: c.code, jump: (function (d) { return function () { catJump(d); }; })(i + 1) }); });
+    var catCount = catList.length;
 
     // ---- selected code (TIFTN result screen) ----
     var sel = s.selected;
@@ -650,7 +656,9 @@
       // TIFTN catalog
       catQuery: s.catQuery || "", catList: catList, hasCat: catList.length > 0,
       catTitle: catTitle, catSearching: catSearching, catLoading: !!s.catLoading,
-      catDrilled: catStack.length > 0,
+      catDrilled: catStack.length > 0, catCrumbs: catCrumbs, catCount: catCount,
+      catShowCrumbs: catStack.length > 0 && !catSearching,
+      catHeading: catSearching ? "Qidiruv natijalari" : catTitle,
       noCat: tiftnReady() && !s.catLoading && catList.length === 0,
       selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
       selConfPct: selConfPct, selReasoning: selReasoning,
