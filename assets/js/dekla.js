@@ -454,6 +454,32 @@
     return p[0].replace(/\B(?=(\d{3})+(?!\d))/g, " ") + "." + p[1];
   }
 
+  /* ---- Bojxona rasmiylashtirish yig'imi ----
+     Vazirlar Mahkamasining 2025-yil 31-yanvardagi 55-son qarori, 1-ilova.
+     Foiz emas: bojxona qiymati (AQSH dollarida) bo'yicha BHM (bazaviy
+     hisoblash miqdori) karralarida belgilangan qat'iy yig'im. BHM yiliga
+     o'zgarib turadi — window.DEKLA_BHM orqali yangilash mumkin. */
+  var BHM = (window.DEKLA_BHM && Number(window.DEKLA_BHM)) || 412000; // so'm
+  var CLEARANCE_TIERS = [
+    { max: 10000, k: 1 },      // 10 000 AQSH dollarigacha — BHMning 1 baravari
+    { max: 20000, k: 1.5 },    // 10 000–20 000 — 1,5 baravari
+    { max: 40000, k: 2.5 },    // 20 000–40 000 — 2,5 baravari
+    { max: 60000, k: 4 },      // 40 000–60 000 — 4 baravari
+    { max: 100000, k: 7 },     // 60 000–100 000 — 7 baravari
+    { max: 200000, k: 10 },    // 100 000–200 000 — 10 baravari
+    { max: 500000, k: 15 },    // 200 000–500 000 — 15 baravari
+    { max: 1000000, k: 20 },   // 500 000–1 000 000 — 20 baravari
+    { max: Infinity, k: 25 }   // 1 000 000 va undan ortiq — 25 baravari
+  ];
+  function clearanceMultiplier(valueUsd) {
+    for (var i = 0; i < CLEARANCE_TIERS.length; i++) {
+      if (valueUsd <= CLEARANCE_TIERS[i].max) return CLEARANCE_TIERS[i].k;
+    }
+    return 25;
+  }
+  // "1.5" -> "1,5" (Uzbek decimal comma) for display
+  function numUz(n) { return String(n).replace(".", ","); }
+
   function renderVals() {
     var s = state;
     var go = function (sc) {
@@ -488,15 +514,16 @@
     var aksiz = 0; // aksiz solig'i — hozircha 0 (ayrim kodlar uchun keyin qo'shiladi)
     // QQS barcha tovarlarga 12%; bazasi = tovar qiymati + boj + aksiz.
     var qqs = (cipUzs + boj + aksiz) * 0.12;
-    // Bojxona rasmiylashtirish yig'imi (yagona yig'im).
-    var yigim = cipUzs * 0.002;
+    // Bojxona rasmiylashtirish yig'imi — bojxona qiymati (USD) bo'yicha BHM karralari.
+    var clrMult = cipUsd > 0 ? clearanceMultiplier(cipUsd) : 0;
+    var yigim = clrMult * BHM;
     // Jami bojxona to'lovlari = boj + aksiz + QQS + yig'im.
     var jamiUzs = boj + aksiz + qqs + yigim;
     var payments = [
       { label: "Bojxona boji", rate: s.cert ? "0%" : (dutyAdv + "%"), uzs: fmt(boj) },
       { label: "Aksiz", rate: "0%", uzs: "0" },
       { label: "QQS", rate: "12%", uzs: fmt(qqs) },
-      { label: "Bojxona rasmiylashtirish yig'imi", rate: "0.2%", uzs: fmt(yigim) }
+      { label: "Bojxona rasmiylashtirish yig'imi", rate: clrMult ? (numUz(clrMult) + "× BHM") : "—", uzs: fmt(yigim) }
     ];
 
     var sc = s.screen;
@@ -660,6 +687,8 @@
       cipUsdStr: fmtUsd(cipUsd), cipUzsStr: fmt(cipUzs),
       jamiUzsStr: fmt(jamiUzs), jamiUsdStr: fmtUsd(jamiUzs / (s.rate || 1)),
       payments: payments,
+      // customs clearance fee basis (VM 31.01.2025/55)
+      bhmStr: fmt(BHM), clrMult: numUz(clrMult), clrFeeStr: fmt(yigim), hasClr: clrMult > 0,
       navAsosiy: navColor("dash"), navHisob: navColor("hisob"), navSaqlangan: navColor("saqlangan"), navProfil: navColor("profile"),
       // TIFTN search
       q: s.q || "", results: results, hasResults: results.length > 0,

@@ -72,6 +72,14 @@ screens fill the viewport like a real mobile app.
   rate, or 0% with an ST-1 certificate toggle), excise, VAT (12%, charged on
   value + duty + excise) and the customs clearance fee are recomputed instantly
   as you type. Total = duty + excise + VAT + clearance fee.
+- **Real customs clearance fee (Resolution No. 55, 31 Jan 2025)** — the
+  `Bojxona rasmiylashtirish yig'imi` is not a flat percentage but a sliding
+  scale fixed in multiples of the BHM (base calculation unit) by the customs
+  value in USD: ≤10k → 1×, 10–20k → 1.5×, 20–40k → 2.5×, 40–60k → 4×,
+  60–100k → 7×, 100–200k → 10×, 200–500k → 15×, 500k–1M → 20×, ≥1M → 25×.
+  BHM defaults to 412 000 so'm and can be updated yearly via
+  `window.DEKLA_BHM`. The payments screen shows the applied multiplier and the
+  basis.
 - **Real navigation** with a back stack and a bottom navigation bar.
 - **No build step, no dependencies, no server** — pure HTML, CSS and a small
   vanilla-JS runtime. Opens straight from `file://`.
