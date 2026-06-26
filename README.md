@@ -55,8 +55,13 @@ screens fill the viewport like a real mobile app.
   real thumbnails, and during analysis the image is shown with a **scanning
   animation** while Claude reads it (Claude is natively multimodal), derives a
   name, and the app classifies it into a TIFTN code.
-- **Excel upload** — pick an `.xlsx`/`.csv`; the app parses it (SheetJS) and
-  classifies the first product row.
+- **Excel upload** — download the ready template
+  (`assets/templates/dekla-tiftn-shablon.xlsx`: Tovar nomi / Tavsif / Material /
+  Ishlatilish sohasi columns + a Yo'riqnoma sheet), fill it in, and upload an
+  `.xlsx`/`.csv`. The app parses it (SheetJS), maps the columns by header
+  keywords, and classifies the first product row (name + description + material
+  + usage). The template download uses Telegram's native downloader inside the
+  Mini App and a normal anchor download in a browser.
 - **Document upload** — pick an invoice / spec / packing-list file (file picker
   wired; manual continue).
 - **Telegram Mini App** — opens inside a Telegram bot via the WebApp SDK

@@ -404,6 +404,23 @@
       setState({ excelName: files[0].name, excelRows: null, aiError: "", _excelFile: files[0] });
     });
   }
+  // Download the Excel template. Uses Telegram's native downloader inside the
+  // Mini App; falls back to a normal anchor download in a browser.
+  function downloadTemplate() {
+    var url = new URL("assets/templates/dekla-tiftn-shablon.xlsx", location.href).href;
+    var name = "dekla-tiftn-shablon.xlsx";
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if (tg && typeof tg.downloadFile === "function") {
+      try { tg.downloadFile({ url: url, file_name: name }); return; } catch (e) { /* fall back */ }
+    }
+    try {
+      var a = document.createElement("a");
+      a.href = url; a.download = name; a.rel = "noopener";
+      document.body.appendChild(a); a.click(); a.remove();
+    } catch (e) {
+      try { window.open(url, "_blank"); } catch (e2) {}
+    }
+  }
   function pickDoc() {
     openPicker(".pdf,.jpg,.jpeg,.png,.xlsx,.xls,.doc,.docx", false, function (files) {
       setState({ docName: files[0].name, aiError: "" });
@@ -456,17 +473,37 @@
     });
   }
 
-  function firstProductName(rows) {
-    if (!rows || !rows.length) return "";
-    var headerKeys = Object.keys(rows[0] || {});
-    var nameKey = headerKeys.filter(function (k) { return /(nom|tovar|mahsulot|name|product|tavsif|desc)/i.test(k); })[0];
+  // Pick the first header key matching a pattern, skipping already-used columns.
+  function colFor(keys, pattern, used) {
+    for (var i = 0; i < keys.length; i++) {
+      if (used.indexOf(keys[i]) < 0 && pattern.test(keys[i])) return keys[i];
+    }
+    return null;
+  }
+  // Read the first filled product row → {name, desc, material, usage}.
+  // Columns are matched by header keywords (matches the Excel template).
+  function firstProduct(rows) {
+    var empty = { name: "", desc: "", material: "", usage: "" };
+    if (!rows || !rows.length) return empty;
+    var keys = Object.keys(rows[0] || {});
+    var used = [];
+    var nameK = colFor(keys, /nom|tovar|mahsulot|name|product/i, used); if (nameK) used.push(nameK);
+    var descK = colFor(keys, /tavsif|izoh|desc|description/i, used); if (descK) used.push(descK);
+    var matK = colFor(keys, /material|tarkib/i, used); if (matK) used.push(matK);
+    var useK = colFor(keys, /ishlat|foydalan|usage|qo.?llan|soha|maqsad/i, used); if (useK) used.push(useK);
+    var get = function (r, k) { return k ? String(r[k] == null ? "" : r[k]).trim() : ""; };
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
-      var v = nameKey ? r[nameKey] : null;
-      if (!v) { for (var j = 0; j < headerKeys.length; j++) { if (typeof r[headerKeys[j]] === "string" && r[headerKeys[j]].trim()) { v = r[headerKeys[j]]; break; } } }
-      if (v && String(v).trim()) return String(v).trim();
+      var nm = get(r, nameK);
+      if (!nm) { // fallback: first non-empty text cell in the row
+        for (var j = 0; j < keys.length; j++) {
+          var v = r[keys[j]];
+          if (typeof v === "string" && v.trim()) { nm = v.trim(); break; }
+        }
+      }
+      if (nm) return { name: nm, desc: get(r, descK), material: get(r, matK), usage: get(r, useK) };
     }
-    return "";
+    return empty;
   }
 
   function runExcelAI() {
@@ -479,24 +516,26 @@
       subtitle: "Fayldan tovar aniqlanib, TIFTN kodi tanlanmoqda",
       steps: ["Excel o'qilmoqda", "Tovar aniqlanmoqda", useAI ? "AI eng mos kodni tanlamoqda" : "Eng mos kod tanlanmoqda"]
     });
-    var name = "", candidates = [];
+    var prod = { name: "", desc: "", material: "", usage: "" }, candidates = [];
     phase(0, 500, function () { return loadXlsx(); })
       .then(function (XLSX) {
         return phase(1, 550, function () {
           return file.arrayBuffer().then(function (buf) {
             var wb = XLSX.read(buf, { type: "array" });
             var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
-            name = firstProductName(rows);
-            if (!name) throw new Error("Excelda tovar nomi ustuni topilmadi.");
+            prod = firstProduct(rows);
+            if (!prod.name) throw new Error("Excelda tovar nomi ustuni topilmadi.");
             setSilent({ excelRows: rows.length });
           });
         });
       })
       .then(ensureTiftn)
       .then(function () {
-        candidates = detectCandidates(name);
-        if (!candidates.length) throw new Error("Excel tovari uchun mos kod topilmadi: " + name);
-        return phase(2, 0, function () { return classifyCandidates({ name: name, desc: "Excel fayldan", material: "", usage: "" }, candidates); });
+        candidates = detectCandidates(prod.name);
+        if (!candidates.length) throw new Error("Excel tovari uchun mos kod topilmadi: " + prod.name);
+        return phase(2, 0, function () {
+          return classifyCandidates({ name: prod.name, desc: prod.desc || "Excel fayldan", material: prod.material, usage: prod.usage }, candidates);
+        });
       })
       .then(function (res) { return finishWithOverlay(res, 3); })
       .catch(failOverlay);
@@ -952,7 +991,7 @@
         onUsage: function (e) { setSilent({ usage: e.target.value }); },
         onFeature: function (e) { setSilent({ feature: e.target.value }); },
         runAI: runAI, genQuestions: genQuestions, runImageAI: runImageAI, runExcelAI: runExcelAI,
-        pickImage: pickImage, pickExcel: pickExcel, pickDoc: pickDoc,
+        pickImage: pickImage, pickExcel: pickExcel, pickDoc: pickDoc, downloadTemplate: downloadTemplate,
         back: back, nextOnb: nextOnb,
         onCountryInput: function (e) { setState({ originText: e.target.value, originCountry: matchCountry(e.target.value) }); },
         detectCountry: detectCountryAI,
