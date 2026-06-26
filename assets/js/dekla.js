@@ -939,6 +939,22 @@
     var noteOpen = !!s.noteOpen;
     var notePreview = noteLat.length > 150 ? noteLat.slice(0, 150).replace(/\s+\S*$/, "") + "…" : noteLat;
 
+    // ---- mandatory assessment requirements (VMQ-43) for the selected code ----
+    var CERT_STYLE = {
+      SES:  { ic: "#d84a4a", icBg: "#fdeaea", badge: "Majburiy",     badgeFg: "#d84a4a", badgeBg: "#fdeaea" },
+      CERT: { ic: "#2f6dd0", icBg: "#eef2fb", badge: "Majburiy",     badgeFg: "#2f6dd0", badgeBg: "#eef2fb" },
+      DECL: { ic: "#c9821a", icBg: "#fef3e6", badge: "Deklaratsiya", badgeFg: "#c9821a", badgeBg: "#fef3e6" }
+    };
+    var certList = (sel && tiftnReady() && window.TifTn.cert) ? window.TifTn.cert(sel.code) : [];
+    var permitCerts = certList.map(function (c) {
+      var st = CERT_STYLE[c.section] || CERT_STYLE.CERT;
+      return {
+        title: c.certType, desc: c.item,
+        footnote: c.footnote || "", hasFootnote: !!c.footnote,
+        ic: st.ic, icBg: st.icBg, badge: st.badge, badgeFg: st.badgeFg, badgeBg: st.badgeBg
+      };
+    });
+
     // ---- AI-generated clarifying questions (tappable option chips) ----
     var answers = s.aiAnswers || {};
     var aiQuestions = (s.aiQuestions || []).map(function (q, i) {
@@ -1030,6 +1046,11 @@
       selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
       selConfPct: selConfPct, selReasoning: selReasoning,
       // import-duty rate for the selected code (PP-3818)
+      // mandatory certification (VMQ-43)
+      permitCerts: permitCerts, permitHasCerts: permitCerts.length > 0, permitNoCerts: permitCerts.length === 0,
+      permitSubtitle: permitCerts.length > 0
+        ? (permitCerts.length + " ta majburiy baholash talabi (VMQ-43)")
+        : "Tovar va HS kodi asosida zarur hujjatlar",
       dutyRateText: dutyRateText, hasDuty: !!dutyInfo, dutyAdvPct: numUz(dutyAdv) + "%",
       dutyFootnote: (dutyInfo && dutyInfo.footnote) ? dutyInfo.footnote : "",
       hasDutyFootnote: !!(dutyInfo && dutyInfo.footnote),

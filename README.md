@@ -64,6 +64,14 @@ screens fill the viewport like a real mobile app.
   confidence) where each row opens the full detail. Capped per run for
   responsiveness. The template download uses Telegram's native downloader inside
   the Mini App and a normal anchor download in a browser.
+- **Mandatory certification requirements (Resolution VMQ-43, 30 Jan 2021)** —
+  the "Ruxsatnoma va sertifikatlar" screen lists the real assessment documents
+  required for the selected code: SES (sanitary-epidemiological conclusion),
+  conformity certificate, or conformity declaration, each with the official
+  category description. Resolved per code via longest-prefix matching (handles
+  heading-level entries and exclusions). Codes outside the lists show "not
+  required". Ships as a compact 122 KB runtime index
+  (`assets/data/tiftn_cert.js`); codes with no requirement show a green card.
 - **Dynamic risk assessment** — the risk screen scores the import 0–100 from the
   certificate, country trade regime, customs value and code confidence, with a
   live gauge needle, colour-coded band, a factor checklist (what raises/lowers

@@ -13,6 +13,7 @@
   var segLat = null;  // per-segment normalized latin
   var byCode = null;  // codeNorm -> entry index
   var dutyData = null; // { u:units, r:[ [adv,minUsd,minPerIdx,plusUsd,plusPerIdx,footnote] ], p:{ prefix:rateIdx } }
+  var certData = null; // { ct:certTypeNames, g:sectionCodes, t:itemTexts, rs:[ [[secIdx,textIdx]] ], c:{code:rsIdx}, fn:{code:footnote} }
   var loadingPromise = null;
 
   /* ---- Cyrillic (Uzbek) -> Latin ---- */
@@ -57,9 +58,10 @@
     loadingPromise = Promise.all([
       loadScript("tiftn_index.js", "__TIFTN_INDEX__"),
       loadScript("tiftn_meta.js", "__TIFTN_META__"),
-      loadScript("tiftn_duty.js", "__TIFTN_DUTY__").catch(function () { return null; })
+      loadScript("tiftn_duty.js", "__TIFTN_DUTY__").catch(function () { return null; }),
+      loadScript("tiftn_cert.js", "__TIFTN_CERT__").catch(function () { return null; })
     ]).then(function (res) {
-        idx = res[0]; meta = res[1]; dutyData = res[2] || null;
+        idx = res[0]; meta = res[1]; dutyData = res[2] || null; certData = res[3] || null;
         // precompute per-segment latin
         segLat = new Array(idx.seg.length);
         for (var i = 0; i < idx.seg.length; i++) segLat[i] = norm(idx.seg[i]);
@@ -329,6 +331,30 @@
     return null;
   }
 
+  // ---- mandatory assessment requirements (VMQ-43, Annex 3) ----
+  // Resolve a code to its certification requirements via longest matching prefix.
+  // Returns [] or [{ section, certType, item, footnote }].
+  function cert(code) {
+    if (!certData) return [];
+    var d = digits(code), C = certData.c;
+    for (var L = d.length; L >= 4; L--) {
+      var pre = d.slice(0, L);
+      if (C[pre] != null) {
+        var set = certData.rs[C[pre]] || [];
+        var fnText = certData.fn[pre] || "";
+        return set.map(function (ref) {
+          return {
+            section: certData.g[ref[0]],
+            certType: certData.ct[ref[0]],
+            item: certData.t[ref[1]] || "",
+            footnote: fnText
+          };
+        });
+      }
+    }
+    return [];
+  }
+
   // Human-readable rate string (Latin, Uzbek), incl. compound (specific) parts.
   function dutyText(code) {
     var r = (code && typeof code === "object") ? code : duty(code);
@@ -344,6 +370,6 @@
     search: search, get: get, siblings: siblings, bestTerminal: bestTerminal,
     chapters: chapters, children: children,
     applicableNotes: applicableNotes, opi: opi, units: units, count: count,
-    duty: duty, dutyText: dutyText
+    duty: duty, dutyText: dutyText, cert: cert
   };
 })();
