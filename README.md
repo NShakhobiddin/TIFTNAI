@@ -60,7 +60,12 @@ screens fill the viewport like a real mobile app.
 - **Document upload** — pick an invoice / spec / packing-list file (file picker
   wired; manual continue).
 - **Telegram Mini App** — opens inside a Telegram bot via the WebApp SDK
-  (`assets/js/telegram.js`): expands, themes, and syncs the Back button.
+  (`assets/js/telegram.js`): expands to fullscreen, themes, and syncs the Back
+  button. Reserves the correct top safe area (device notch/status bar **plus**
+  Telegram's floating controls, summed) so the header is never hidden, and locks
+  the page against rubber-band/overscroll so only the in-app list scrolls —
+  native-app-like and stable. The bottom nav and content respect the home
+  indicator.
 - **Real import-duty rates (PP-3818)** — every code carries its official import
   customs-duty rate from Resolution PP-3818. The TIFTN result screen shows the
   rate (`Import boj stavkasi`), including compound rates (e.g. `15% + 1 USD/kub

@@ -15,9 +15,16 @@
 
   function applyInsets() {
     try {
-      var sa = tg.contentSafeAreaInset || tg.safeAreaInset || {};
-      root.style.setProperty("--tg-top", px(sa.top));
-      root.style.setProperty("--tg-bottom", px(sa.bottom));
+      // Total inset = device safe area (notch/status bar/home indicator)
+      // PLUS Telegram's own chrome (the floating close/menu buttons shown in
+      // fullscreen). They stack, so they must be summed — using only one of
+      // them leaves the header hidden under Telegram's controls.
+      var sa = tg.safeAreaInset || {};
+      var ca = tg.contentSafeAreaInset || {};
+      root.style.setProperty("--tg-top", px((sa.top || 0) + (ca.top || 0)));
+      root.style.setProperty("--tg-bottom", px((sa.bottom || 0) + (ca.bottom || 0)));
+      root.style.setProperty("--tg-left", px((sa.left || 0) + (ca.left || 0)));
+      root.style.setProperty("--tg-right", px((sa.right || 0) + (ca.right || 0)));
       var h = tg.viewportStableHeight || tg.viewportHeight;
       if (h) root.style.setProperty("--tg-h", px(h));
     } catch (e) { /* ignore */ }
@@ -38,8 +45,10 @@
   ["safeAreaChanged", "contentSafeAreaChanged", "viewportChanged", "fullscreenChanged"].forEach(function (ev) {
     try { tg.onEvent(ev, applyInsets); } catch (e) {}
   });
+  try { window.addEventListener("resize", applyInsets); } catch (e) {}
   applyInsets();
-  setTimeout(applyInsets, 300);
+  // insets/fullscreen can settle a beat after launch — re-apply a few times.
+  [150, 350, 700, 1500].forEach(function (ms) { setTimeout(applyInsets, ms); });
 
   // Sync Telegram's Back button with the app's in-screen back button.
   try {

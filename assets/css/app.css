@@ -2,18 +2,36 @@
    Dekla AI — app styles (full-screen, no phone frame)
    ============================================================ */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; padding: 0; height: 100%; }
+/* Lock the document so only the in-app scroll area moves — no page-level
+   rubber-band / overscroll that would drift the layout or drag the Telegram
+   window. This is what makes it feel like a native app. */
+html, body {
+  margin: 0; padding: 0; height: 100%; width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
 body {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   background: #0e2545;
   color: #14284c;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
 }
 img { max-width: 100%; display: block; }
 input, button, textarea, select { font-family: inherit; }
 button { cursor: pointer; }
 
 ::-webkit-scrollbar { width: 0; height: 0; }
-.scr { scrollbar-width: none; -ms-overflow-style: none; }
+/* The one and only scroller: smooth momentum, but overscroll stays contained
+   (no chaining to the page) and only vertical panning is allowed. */
+.scr {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
+  padding-bottom: var(--tg-bottom, env(safe-area-inset-bottom, 0px));
+}
 
 @keyframes dkfade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes dkpulse { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
@@ -28,8 +46,11 @@ button { cursor: pointer; }
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+  overscroll-behavior: none;
   margin: 0;
   padding-top: env(safe-area-inset-top, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 /* a little breathing room at the very top so the first header isn't glued to the edge */
@@ -42,7 +63,10 @@ html.tg, html.tg body { background: #0e2545; }
 html.tg .app-root {
   height: var(--tg-h, 100dvh);
   padding-top: var(--tg-top, 0px);
-  padding-bottom: var(--tg-bottom, 0px);
+  padding-left: var(--tg-left, 0px);
+  padding-right: var(--tg-right, 0px);
+  /* bottom inset is handled inside the scroll area / bottom nav so their
+     backgrounds bleed to the screen edge */
 }
 
 .dk-anim { animation: dkfade .3s ease; }
