@@ -72,6 +72,11 @@ screens fill the viewport like a real mobile app.
   rate, or 0% with an ST-1 certificate toggle), excise, VAT (12%, charged on
   value + duty + excise) and the customs clearance fee are recomputed instantly
   as you type. Total = duty + excise + VAT + clearance fee.
+- **Live Central Bank exchange rate** — the USD rate is fetched from the Central
+  Bank of Uzbekistan (`cbu.uz/uz/arkhiv-kursov-valyut/json/USD/`) on load, cached
+  in `localStorage`, and shown with its official date. A refresh button re-pulls
+  it; a manual edit switches the field to manual (and is never overwritten). If
+  the bank is unreachable the last cached or default rate is used.
 - **Real customs clearance fee (Resolution No. 55, 31 Jan 2025)** — the
   `Bojxona rasmiylashtirish yig'imi` is not a flat percentage but a sliding
   scale fixed in multiples of the BHM (base calculation unit) by the customs

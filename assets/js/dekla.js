@@ -10,6 +10,8 @@
   var state = {
     screen: "splash", stack: [], onb: 0, cert: false,
     invoice: 10000, transport: 800, insurance: 200, other: 150, rate: 12600,
+    // exchange rate (USD) source — auto from Central Bank until manually edited
+    rateAuto: true, rateDate: "", rateLoading: false, rateError: false,
     q: "", results: [], selected: null, tiftnLoading: false,
     // TIFTN catalog (browse + manual pick)
     catStack: [], catQuery: "", catLoading: false,
@@ -31,6 +33,58 @@
   // Silent update — store input values without re-rendering (keeps native
   // focus/caret on free-text fields the UI doesn't derive anything from).
   function setSilent(patch) { Object.assign(state, patch); }
+
+  /* ---------------- Central Bank (CBU) exchange rate ----------------
+     USD rasmiy kursini O'zbekiston Markaziy bankidan oladi:
+     https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/
+     Natija keshlanadi; tarmoq ishlamasa, kesh yoki standart kurs ishlatiladi. */
+  var CBU_USD_URL = "https://cbu.uz/uz/arkhiv-kursov-valyut/json/USD/";
+  var RATE_CACHE_KEY = "dekla_usd_rate";
+
+  function readRateCache() {
+    try {
+      var c = JSON.parse(localStorage.getItem(RATE_CACHE_KEY) || "null");
+      if (c && c.rate > 0) return c; // { rate, date, ts }
+    } catch (e) {}
+    return null;
+  }
+  function writeRateCache(rate, date) {
+    try {
+      localStorage.setItem(RATE_CACHE_KEY, JSON.stringify({ rate: rate, date: date, ts: Date.now() }));
+    } catch (e) {}
+  }
+
+  function fetchCbuRate() {
+    if (typeof fetch !== "function") return Promise.reject(new Error("no fetch"));
+    return fetch(CBU_USD_URL, { cache: "no-store" })
+      .then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function (data) {
+        var row = Array.isArray(data) ? data[0] : data;
+        var rate = row && parseFloat(String(row.Rate).replace(",", "."));
+        if (!rate || !(rate > 0)) throw new Error("bad rate");
+        return { rate: Math.round(rate * 100) / 100, date: (row && row.Date) || "" };
+      });
+  }
+
+  // Boot: show cached rate immediately (if any), then refresh from CBU.
+  // A manual edit (rateAuto === false) is never overwritten.
+  function initRate() {
+    var cached = readRateCache();
+    if (cached && state.rateAuto) {
+      setState({ rate: cached.rate, rateDate: cached.date });
+    }
+    setState({ rateLoading: true });
+    fetchCbuRate().then(function (res) {
+      writeRateCache(res.rate, res.date);
+      setState(function (p) {
+        return p.rateAuto
+          ? { rate: res.rate, rateDate: res.date, rateLoading: false, rateError: false }
+          : { rateLoading: false, rateError: false };
+      });
+    }).catch(function () {
+      setState(function (p) { return { rateLoading: false, rateError: !p.rateDate }; });
+    });
+  }
 
   /* ---------------- Analysis overlay (animated, above #app) ---------------- */
   // Lives in <body> so it survives #app re-renders and animates smoothly.
@@ -684,6 +738,11 @@
       certToggleBg: s.cert ? "#1ca354" : "#cfd7e3",
       certToggleJustify: s.cert ? "flex-end" : "flex-start",
       invoice: s.invoice, transport: s.transport, insurance: s.insurance, other: s.other, rate: s.rate,
+      // exchange-rate source note shown under the rate input
+      rateNote: s.rateLoading ? "MB kursi yuklanmoqda…"
+        : (!s.rateAuto ? "Qo'lda kiritilgan"
+          : (s.rateError ? "MB ulanmadi — standart kurs"
+            : (s.rateDate ? ("Markaziy bank · " + s.rateDate) : "Markaziy bank kursi"))),
       cipUsdStr: fmtUsd(cipUsd), cipUzsStr: fmt(cipUzs),
       jamiUzsStr: fmt(jamiUzs), jamiUsdStr: fmtUsd(jamiUzs / (s.rate || 1)),
       payments: payments,
@@ -746,7 +805,14 @@
         pay: go("pay"), permit: go("permit"), risk: go("risk"), final: go("final"), profile: go("profile"),
         help: go("help"), tariffs: go("tariffs"), hisob: go("hisob"), saqlangan: go("saqlangan"),
         onInvoice: num("invoice"), onTransport: num("transport"), onInsurance: num("insurance"),
-        onOther: num("other"), onRate: num("rate")
+        onOther: num("other"),
+        // manual rate edit switches the source off "auto" so CBU won't overwrite it
+        onRate: function (e) {
+          var v = parseFloat(String(e.target.value).replace(/[^0-9.]/g, "")) || 0;
+          setState({ rate: v, rateAuto: false, rateError: false });
+        },
+        // re-enable auto and re-fetch the Central Bank rate
+        refreshRate: function () { setState({ rateAuto: true }); initRate(); }
       }
     };
   }
@@ -875,6 +941,7 @@
     var tplEl = document.getElementById("app-tpl");
     template = tplEl.content || tplEl;
     render();
+    initRate(); // pull the live USD rate from the Central Bank
   }
 
   if (document.readyState === "loading") {
