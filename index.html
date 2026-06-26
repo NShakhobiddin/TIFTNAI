@@ -280,6 +280,29 @@
         </div>
       </sc-if>
 
+      <!-- ============ EXCEL RESULTS (multi-product) ============ -->
+      <sc-if value="{{ isExcelResults }}" hint-placeholder-val="{{ false }}">
+        <div data-screen-label="Excel natijalari" style="padding:0 18px 30px;opacity:1">
+          <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 4px">Excel natijalari</h1>
+          <p style="font-size:13px;color:#7c879b;margin:0 0 16px;line-height:1.5">{{ excelOkCount }} / {{ excelResultsCount }} tovarga TIFTN kodi aniqlandi. Tafsilot uchun qatorni bosing.</p>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;overflow:hidden;margin-bottom:16px">
+            <div style="display:flex;padding:11px 14px;background:#f4f6fb;font-size:11px;font-weight:700;color:#8b94a6;text-transform:uppercase;letter-spacing:.3px"><span style="width:22px">#</span><span style="flex:1.4">Tovar</span><span style="flex:1.1">TIFTN kodi</span><span style="width:54px;text-align:right">Ishonch</span></div>
+            <sc-for list="{{ excelResults }}" as="r" hint-placeholder-count="4">
+            <div onclick="{{ r.open }}" style="display:flex;align-items:center;padding:12px 14px;border-top:1px solid #f0f2f7;cursor:pointer">
+              <span style="width:22px;font-size:12px;color:#9aa4b6;font-weight:700">{{ r.idx }}</span>
+              <div style="flex:1.4;min-width:0;padding-right:8px"><div style="font-size:13px;font-weight:600;color:#14284c;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</div></div>
+              <div style="flex:1.1;min-width:0;padding-right:6px"><div style="font-size:12.5px;font-weight:700;color:#14284c;font-family:monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.code }}</div><div style="font-size:10.5px;color:#9aa4b6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.codeName }}</div></div>
+              <span style="width:54px;text-align:right;font-size:12.5px;font-weight:700;color:{{ r.confColor }}">{{ r.confText }}</span>
+            </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ hasExcelMore }}">
+          <div style="display:flex;gap:10px;background:#fff7ec;border:1px solid #f3e2c4;border-radius:14px;padding:12px 14px;margin-bottom:16px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#c9821a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v4M12 16h.01"></path></svg><div style="font-size:12px;color:#8a7548;line-height:1.5">{{ excelMoreNote }}</div></div>
+          </sc-if>
+          <button onclick="{{ h.new }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Yangi tahlil <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"></path></svg></button>
+        </div>
+      </sc-if>
+
       <!-- ============ HUJJAT ============ -->
       <sc-if value="{{ isHujjat }}" hint-placeholder-val="{{ false }}">
         <div data-screen-label="Hujjat yuklash" style="padding:0 18px 30px;opacity:1">
@@ -469,26 +492,38 @@
         <div data-screen-label="Risk bahosi" style="padding:0 18px 30px;opacity:1">
           <h1 style="font-size:22px;font-weight:700;color:#14284c;margin:0 0 4px">Risk bahosi</h1>
           <p style="font-size:13px;color:#7c879b;margin:0 0 18px;line-height:1.5">Import operatsiyasi xavf darajasi</p>
-          <div style="background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:24px 18px;display:flex;flex-direction:column;align-items:center;margin-bottom:16px">
-            <svg width="240" height="150" viewBox="0 0 200 130">
-              <path d="M20 110 A80 80 0 0 1 87.5 31" fill="none" stroke="#2fb35c" stroke-width="15" stroke-linecap="round"></path>
-              <path d="M90 29.5 A80 80 0 0 1 130 35" fill="none" stroke="#f0b429" stroke-width="15"></path>
-              <path d="M132 36.5 A80 80 0 0 1 158 56" fill="none" stroke="#f3792b" stroke-width="15"></path>
-              <path d="M159.5 57.5 A80 80 0 0 1 180 110" fill="none" stroke="#e0463f" stroke-width="15" stroke-linecap="round"></path>
-              <text x="20" y="126" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">0</text>
-              <text x="100" y="18" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">50</text>
-              <text x="180" y="126" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">100</text>
-              <g transform="rotate(-39.6 100 110)"><line x1="100" y1="110" x2="100" y2="42" stroke="#14284c" stroke-width="4" stroke-linecap="round"></line></g>
-              <circle cx="100" cy="110" r="8" fill="#14284c"></circle>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:18px;padding:22px 18px 20px;display:flex;flex-direction:column;align-items:center;margin-bottom:14px">
+            <svg width="232" height="140" viewBox="0 0 200 128">
+              <path d="M20 110 A80 80 0 0 1 87.5 31" fill="none" stroke="#2fb35c" stroke-width="14" stroke-linecap="round"></path>
+              <path d="M90 29.5 A80 80 0 0 1 130 35" fill="none" stroke="#f0b429" stroke-width="14"></path>
+              <path d="M132 36.5 A80 80 0 0 1 158 56" fill="none" stroke="#f3792b" stroke-width="14"></path>
+              <path d="M159.5 57.5 A80 80 0 0 1 180 110" fill="none" stroke="#e0463f" stroke-width="14" stroke-linecap="round"></path>
+              <text x="20" y="125" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">0</text>
+              <text x="100" y="16" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">50</text>
+              <text x="180" y="125" font-size="11" fill="#9aa4b6" font-family="Plus Jakarta Sans" text-anchor="middle">100</text>
+              <g transform="rotate({{ riskAngle }} 100 110)"><line x1="100" y1="110" x2="100" y2="40" stroke="#14284c" stroke-width="4" stroke-linecap="round"></line></g>
+              <circle cx="100" cy="110" r="7.5" fill="#14284c"></circle>
             </svg>
-            <div style="font-size:42px;font-weight:800;color:#1ca354;line-height:1;margin-top:-6px">28</div>
-            <div style="font-size:14px;font-weight:700;color:#1ca354;margin-top:5px;display:flex;align-items:center;gap:6px">Past risk <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1ca354" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.1V12a10 10 0 11-5.9-9.1"></path><path d="M22 4L12 14l-3-3"></path></svg></div>
+            <div style="font-size:44px;font-weight:800;color:{{ riskColor }};line-height:1;margin-top:-8px">{{ riskScore }}</div>
+            <div style="margin-top:9px;display:inline-flex;align-items:center;gap:6px;background:{{ riskBg }};color:{{ riskColor }};font-size:13px;font-weight:700;padding:6px 14px;border-radius:11px">{{ riskBand }}</div>
           </div>
-          <div style="background:#eef3fb;border:1px solid #dfe9f7;border-radius:16px;padding:16px;margin-bottom:16px"><div style="display:flex;align-items:center;gap:9px;margin-bottom:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><span style="font-size:14px;font-weight:700;color:#14284c">Amaliy tavsiya</span></div><div style="font-size:12.5px;color:#6a7689;line-height:1.55">Hujjatlaringiz to'liq va to'g'ri tayyorlangan. Past risk darajasi bojxona rasmiylashtiruvi tez va muammosiz o'tishini ko'rsatadi.</div></div>
-          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:16px;margin-bottom:18px;display:flex;flex-direction:column;gap:11px">
-            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c"><span style="width:10px;height:10px;border-radius:50%;background:#2fb35c"></span>0 – 30 · Past risk</div>
-            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c"><span style="width:10px;height:10px;border-radius:50%;background:#f0b429"></span>31 – 60 · O'rta risk</div>
-            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c"><span style="width:10px;height:10px;border-radius:50%;background:#e0463f"></span>61 – 100 · Yuqori risk</div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:15px 16px;margin-bottom:14px">
+            <div style="font-size:13px;font-weight:700;color:#14284c;margin-bottom:12px">Baholash omillari</div>
+            <sc-for list="{{ riskFactors }}" as="f">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+              <span style="width:22px;height:22px;border-radius:50%;background:{{ f.chipBg }};display:flex;align-items:center;justify-content:center;flex:none">
+                <sc-if value="{{ f.ok }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="{{ f.fg }}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg></sc-if>
+                <sc-if value="{{ !f.ok }}"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="{{ f.fg }}" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6L6 18M6 6l12 12"></path></svg></sc-if>
+              </span>
+              <span style="font-size:12.5px;color:#3a455c;line-height:1.4">{{ f.text }}</span>
+            </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:11px;background:{{ riskBg }};border:1px solid #eef0f4;border-radius:14px;padding:14px;margin-bottom:14px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{ riskColor }}" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg><div><div style="font-size:13.5px;font-weight:700;color:#14284c;margin-bottom:3px">Amaliy tavsiya</div><div style="font-size:12.5px;color:#6a7689;line-height:1.55">{{ riskAdvice }}</div></div></div>
+          <div style="background:#fff;border:1px solid #e9edf4;border-radius:16px;padding:6px;margin-bottom:18px">
+            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c;padding:9px 11px;border-radius:11px;background:{{ riskLowBg }}"><span style="width:10px;height:10px;border-radius:50%;background:#2fb35c"></span>0 – 30 · Past risk</div>
+            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c;padding:9px 11px;border-radius:11px;background:{{ riskMidBg }}"><span style="width:10px;height:10px;border-radius:50%;background:#f0b429"></span>31 – 60 · O'rta risk</div>
+            <div style="display:flex;align-items:center;gap:9px;font-size:12.5px;color:#3a455c;padding:9px 11px;border-radius:11px;background:{{ riskHighBg }}"><span style="width:10px;height:10px;border-radius:50%;background:#e0463f"></span>61 – 100 · Yuqori risk</div>
           </div>
           <button onclick="{{ h.final }}" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;background:#14284c;color:#fff;border:none;border-radius:15px;padding:16px;font-size:15.5px;font-weight:700;font-family:inherit;cursor:pointer">Yakuniy natija <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></button>
         </div>

@@ -24,7 +24,8 @@
     // AI-generated clarifying questions
     aiQuestions: [], aiAnswers: {}, candidates: [], productCtx: null,
     // uploads
-    imageFiles: [], imageThumbs: [], excelName: "", excelRows: null, docName: ""
+    imageFiles: [], imageThumbs: [], excelName: "", excelRows: null, docName: "",
+    excelResults: null, excelTotal: 0, excelShown: 0
   };
 
   function setState(patch) {
@@ -157,6 +158,12 @@
       }
     }
 
+    function setSubtitle(t) {
+      if (!el) return;
+      var s = el.querySelector(".dk-card-sub");
+      if (s) s.textContent = t;
+    }
+
     function hide() {
       if (!el) return;
       var cur = el; el = null;
@@ -165,7 +172,7 @@
     }
     function remove() { if (el && el.parentNode) el.parentNode.removeChild(el); el = null; }
 
-    return { show: show, setStep: setStep, hide: hide };
+    return { show: show, setStep: setStep, setSubtitle: setSubtitle, hide: hide };
   })();
 
   function delay(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
@@ -480,11 +487,10 @@
     }
     return null;
   }
-  // Read the first filled product row → {name, desc, material, usage}.
+  // Read every filled product row → [{name, desc, material, usage}, ...].
   // Columns are matched by header keywords (matches the Excel template).
-  function firstProduct(rows) {
-    var empty = { name: "", desc: "", material: "", usage: "" };
-    if (!rows || !rows.length) return empty;
+  function allProducts(rows) {
+    if (!rows || !rows.length) return [];
     var keys = Object.keys(rows[0] || {});
     var used = [];
     var nameK = colFor(keys, /nom|tovar|mahsulot|name|product/i, used); if (nameK) used.push(nameK);
@@ -492,6 +498,7 @@
     var matK = colFor(keys, /material|tarkib/i, used); if (matK) used.push(matK);
     var useK = colFor(keys, /ishlat|foydalan|usage|qo.?llan|soha|maqsad/i, used); if (useK) used.push(useK);
     var get = function (r, k) { return k ? String(r[k] == null ? "" : r[k]).trim() : ""; };
+    var out = [];
     for (var i = 0; i < rows.length; i++) {
       var r = rows[i];
       var nm = get(r, nameK);
@@ -501,10 +508,12 @@
           if (typeof v === "string" && v.trim()) { nm = v.trim(); break; }
         }
       }
-      if (nm) return { name: nm, desc: get(r, descK), material: get(r, matK), usage: get(r, useK) };
+      if (nm) out.push({ name: nm, desc: get(r, descK), material: get(r, matK), usage: get(r, useK) });
     }
-    return empty;
+    return out;
   }
+
+  var MAX_EXCEL_ROWS = 30; // cap per run so it stays responsive
 
   function runExcelAI() {
     var file = state._excelFile;
@@ -513,31 +522,59 @@
     setSilent({ aiLoading: true, aiError: "" });
     Overlay.show({
       title: "Excel tahlil qilinmoqda",
-      subtitle: "Fayldan tovar aniqlanib, TIFTN kodi tanlanmoqda",
-      steps: ["Excel o'qilmoqda", "Tovar aniqlanmoqda", useAI ? "AI eng mos kodni tanlamoqda" : "Eng mos kod tanlanmoqda"]
+      subtitle: "Fayl o'qilmoqda…",
+      steps: ["Excel o'qilmoqda", "Tovarlar o'qilmoqda", useAI ? "AI har bir tovar kodini aniqlamoqda" : "Har bir tovar kodi aniqlanmoqda"]
     });
-    var prod = { name: "", desc: "", material: "", usage: "" }, candidates = [];
-    phase(0, 500, function () { return loadXlsx(); })
+    var TL = (tiftnReady() && window.TifTn.translitDisplay) ? window.TifTn.translitDisplay : function (x) { return x || ""; };
+    var products = [];
+    phase(0, 450, function () { return loadXlsx(); })
       .then(function (XLSX) {
-        return phase(1, 550, function () {
+        return phase(1, 350, function () {
           return file.arrayBuffer().then(function (buf) {
             var wb = XLSX.read(buf, { type: "array" });
             var rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { defval: "" });
-            prod = firstProduct(rows);
-            if (!prod.name) throw new Error("Excelda tovar nomi ustuni topilmadi.");
+            products = allProducts(rows);
+            if (!products.length) throw new Error("Excelda tovar nomi ustuni topilmadi.");
             setSilent({ excelRows: rows.length });
           });
         });
       })
       .then(ensureTiftn)
       .then(function () {
-        candidates = detectCandidates(prod.name);
-        if (!candidates.length) throw new Error("Excel tovari uchun mos kod topilmadi: " + prod.name);
-        return phase(2, 0, function () {
-          return classifyCandidates({ name: prod.name, desc: prod.desc || "Excel fayldan", material: prod.material, usage: prod.usage }, candidates);
+        Overlay.setStep(2);
+        var capped = products.slice(0, MAX_EXCEL_ROWS);
+        var results = [];
+        // classify each row one after another so progress is visible and the
+        // AI worker isn't hit with a burst of concurrent requests.
+        var chain = capped.reduce(function (prev, prod, idx) {
+          return prev.then(function () {
+            Overlay.setSubtitle((idx + 1) + " / " + capped.length + " — " + prod.name);
+            var cands = detectCandidates(prod.name);
+            if (!cands.length) { results.push({ name: prod.name, code: "", codeName: "", conf: 0, error: true }); return; }
+            return classifyCandidates(
+              { name: prod.name, desc: prod.desc || "Excel fayldan", material: prod.material, usage: prod.usage },
+              cands
+            ).then(function (res) {
+              var code = (tiftnReady() && window.TifTn.bestTerminal) ? window.TifTn.bestTerminal(res.code) : res.code;
+              var info = (tiftnReady() && window.TifTn.get(code)) || {};
+              results.push({ name: prod.name, code: code, codeName: TL(info.name || res.name || ""), conf: res.confidence || 0, error: false });
+            }).catch(function () {
+              results.push({ name: prod.name, code: "", codeName: "", conf: 0, error: true });
+            });
+          });
+        }, Promise.resolve());
+        return chain.then(function () { return { results: results, total: products.length, shown: capped.length }; });
+      })
+      .then(function (data) {
+        Overlay.setStep(3);
+        return delay(350).then(function () {
+          Overlay.hide();
+          setState(function (p) {
+            return { aiLoading: false, excelResults: data.results, excelTotal: data.total, excelShown: data.shown,
+              screen: "excelResults", stack: p.stack.concat([p.screen]) };
+          });
         });
       })
-      .then(function (res) { return finishWithOverlay(res, 3); })
       .catch(failOverlay);
   }
 
@@ -677,6 +714,30 @@
     return annex === 2 ? "2-ilova · erkin savdo"
       : annex === 1 ? "1-ilova · eng ko'p qulaylik (MFN)"
       : "ro'yxatda yo'q (boshqa davlat)";
+  }
+
+  // Import-risk score (0..100, lower = safer) built from the data we have:
+  // certificate, country trade regime, customs value and code confidence.
+  // Returns { score, factors:[{ok, text}] }.
+  function riskFrom(certType, country, cipUsd, conf) {
+    var score = 16, factors = [];
+    var ok = function (t) { factors.push({ ok: true, text: t }); };
+    var bad = function (t, pts) { score += pts; factors.push({ ok: false, text: t }); };
+    if (certType === "none") bad("Kelib chiqish sertifikati yo'q", 26);
+    else ok(certType === "st1" ? "ST-1 sertifikati mavjud" : "Kelib chiqish sertifikati mavjud");
+    var annex = countryAnnex(country);
+    if (!country) bad("Kelib chiqish mamlakati ko'rsatilmagan", 9);
+    else if (annex === 2) ok("Erkin savdo davlati (2-ilova)");
+    else if (annex === 1) ok("Eng ko'p qulaylik davlati (1-ilova)");
+    else bad("Davlat imtiyozli ro'yxatda emas", 10);
+    if (cipUsd >= 500000) bad("Juda yuqori bojxona qiymati", 14);
+    else if (cipUsd >= 100000) bad("Yuqori bojxona qiymati", 8);
+    else ok("Bojxona qiymati o'rtacha darajada");
+    if (conf != null) {
+      if (conf < 70) bad("TIFTN kod ishonchliligi past", 12);
+      else if (conf >= 85) ok("TIFTN kod ishonch darajasi yuqori");
+    }
+    return { score: Math.max(4, Math.min(96, Math.round(score))), factors: factors };
   }
   // AI orqali erkin matndan davlatni aniqlash (lokal moslik topilmaganda).
   function detectCountryAI() {
@@ -899,10 +960,21 @@
       };
     });
 
+    // ---- import-risk assessment (dynamic) ----
+    var risk = riskFrom(s.certType, s.originCountry, cipUsd, selConf);
+    var riskColor = risk.score <= 30 ? "#1ca354" : risk.score <= 60 ? "#d8901a" : "#e0463f";
+    var riskBg = risk.score <= 30 ? "#eafaf0" : risk.score <= 60 ? "#fdf3e3" : "#fdecec";
+    var riskBand = risk.score <= 30 ? "Past risk" : risk.score <= 60 ? "O'rta risk" : "Yuqori risk";
+    var riskAdvice = risk.score <= 30
+      ? "Hujjatlar to'liq — bojxona rasmiylashtiruvi tez va muammosiz o'tishi kutiladi."
+      : risk.score <= 60
+        ? "Xavfni kamaytirish uchun kelib chiqish sertifikati va mamlakatni aniqlashtiring."
+        : "Yuqori xavf: kelib chiqish sertifikati va hujjatlarni to'liq rasmiylashtiring, aks holda tekshiruv ehtimoli yuqori.";
+
     return {
       isSplash: sc === "splash", isLogin: sc === "login", isSms: sc === "sms", isOnb: sc === "onb",
       isDash: sc === "dash", isTezkor: sc === "tezkor", isNew: sc === "new", isProduct: sc === "product",
-      isImage: sc === "image", isExcel: sc === "excel", isHujjat: sc === "hujjat", isAi: sc === "ai",
+      isImage: sc === "image", isExcel: sc === "excel", isExcelResults: sc === "excelResults", isHujjat: sc === "hujjat", isAi: sc === "ai",
       isTiftn: sc === "tiftn", isAlt: sc === "alt", isValue: sc === "value", isPay: sc === "pay",
       isPermit: sc === "permit", isRisk: sc === "risk", isFinal: sc === "final", isProfile: sc === "profile",
       isHelp: sc === "help", isTariffs: sc === "tariffs", isHisob: sc === "hisob", isSaqlangan: sc === "saqlangan",
@@ -981,6 +1053,33 @@
         ? (s.excelRows != null ? (s.excelRows + " qator topildi") : "Tanlandi — bosing: Davom etish")
         : "Bosing va .xlsx / .csv faylni tanlang",
       excelBtn: s.aiLoading ? "Tahlil qilinmoqda…" : "Tahlil qilish",
+      // dynamic risk assessment
+      riskScore: risk.score, riskColor: riskColor, riskBg: riskBg, riskBand: riskBand,
+      riskAngle: (risk.score - 50) * 1.8, riskAdvice: riskAdvice,
+      riskFactors: risk.factors.map(function (f) {
+        return { ok: f.ok, text: f.text, fg: f.ok ? "#1ca354" : "#e0463f", chipBg: f.ok ? "#e9f6ee" : "#fdecec" };
+      }),
+      riskLowBg: risk.score <= 30 ? "#eafaf0" : "transparent",
+      riskMidBg: (risk.score > 30 && risk.score <= 60) ? "#fdf3e3" : "transparent",
+      riskHighBg: risk.score > 60 ? "#fdecec" : "transparent",
+      // multi-product Excel results
+      excelResults: (s.excelResults || []).map(function (r, i) {
+        var confColor = r.error ? "#e0463f" : (r.conf >= 85 ? "#1ca354" : r.conf >= 70 ? "#c9821a" : "#e0463f");
+        return {
+          idx: i + 1, name: r.name,
+          code: r.code || "—",
+          codeName: r.error ? "Mos kod topilmadi" : (r.codeName || ""),
+          confText: r.error ? "—" : (r.conf + "%"),
+          confColor: confColor, isError: r.error,
+          open: r.code ? (function (c) { return function () { selectCode(c); }; })(r.code) : function () {}
+        };
+      }),
+      hasExcelResults: !!(s.excelResults && s.excelResults.length),
+      excelResultsCount: s.excelResults ? s.excelResults.length : 0,
+      excelOkCount: (s.excelResults || []).filter(function (r) { return !r.error; }).length,
+      hasExcelMore: !!(s.excelTotal > s.excelShown),
+      excelMoreNote: (s.excelTotal > s.excelShown)
+        ? ("Jami " + s.excelTotal + " ta tovardan dastlabki " + s.excelShown + " tasi ko'rsatildi.") : "",
       docDisp: s.docName || "",
       h: {
         onSearch: function (e) { runSearch(e.target.value); },
@@ -1113,6 +1212,13 @@
     var active = document.activeElement;
     var focusKey = (active && active.getAttribute) ? active.getAttribute("data-bind-key") : null;
 
+    // remember scroll position so an in-screen re-render (typing, tapping a
+    // chip) doesn't jump the page back to the top. Only restored when the
+    // screen is unchanged; navigation still starts at the top.
+    var sameScreen = state.screen === lastScreen;
+    var prevScroll = 0;
+    if (sameScreen) { var oldScr = root.querySelector(".scr"); if (oldScr) prevScroll = oldScr.scrollTop; }
+
     var vals = renderVals();
     var frag = document.createDocumentFragment();
     renderNodes(template.childNodes, vals, frag);
@@ -1124,6 +1230,9 @@
       var screenEl = root.querySelector("[data-screen-label]");
       if (screenEl) { screenEl.classList.add("dk-anim"); }
       lastScreen = state.screen;
+    } else if (prevScroll) {
+      var newScr = root.querySelector(".scr");
+      if (newScr) newScr.scrollTop = prevScroll;
     }
 
     // restore focus

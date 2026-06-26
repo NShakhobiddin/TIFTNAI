@@ -59,9 +59,17 @@ screens fill the viewport like a real mobile app.
   (`assets/templates/dekla-tiftn-shablon.xlsx`: Tovar nomi / Tavsif / Material /
   Ishlatilish sohasi columns + a Yo'riqnoma sheet), fill it in, and upload an
   `.xlsx`/`.csv`. The app parses it (SheetJS), maps the columns by header
-  keywords, and classifies the first product row (name + description + material
-  + usage). The template download uses Telegram's native downloader inside the
-  Mini App and a normal anchor download in a browser.
+  keywords, and classifies **every product row** sequentially (name + description
+  + material + usage), then shows a results table (product → TIFTN code →
+  confidence) where each row opens the full detail. Capped per run for
+  responsiveness. The template download uses Telegram's native downloader inside
+  the Mini App and a normal anchor download in a browser.
+- **Dynamic risk assessment** — the risk screen scores the import 0–100 from the
+  certificate, country trade regime, customs value and code confidence, with a
+  live gauge needle, colour-coded band, a factor checklist (what raises/lowers
+  the score) and tailored advice.
+- **Stable, app-like scrolling** — re-renders preserve the scroll position, so
+  typing or tapping chips never jumps the screen back to the top.
 - **Document upload** — pick an invoice / spec / packing-list file (file picker
   wired; manual continue).
 - **Telegram Mini App** — opens inside a Telegram bot via the WebApp SDK
