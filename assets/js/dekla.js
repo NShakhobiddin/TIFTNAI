@@ -10,7 +10,8 @@
   var state = {
     screen: "splash", stack: [], onb: 0,
     // tovar kelib chiqishi bo'yicha boj preferensiyasi
-    originCountry: "", certType: "none", // certType: none | origin | st1
+    originText: "", originCountry: "", originDetecting: false,
+    certType: "none", // certType: none | origin | st1
     invoice: 10000, transport: 800, insurance: 200, other: 150, rate: 12600,
     // exchange rate (USD) source — auto from Central Bank until manually edited
     rateAuto: true, rateDate: "", rateLoading: false, rateError: false,
@@ -567,6 +568,9 @@
     "Qirg'iziston Respublikasi", "Moldova Respublikasi", "Rossiya Federatsiyasi",
     "Turkmaniston", "Ukraina", "Tojikiston Respublikasi", "Ozarbayjon Respublikasi"
   ];
+  // birlashgan, alifbo tartibidagi ro'yxat (tanlash uchun)
+  var ALL_COUNTRIES = FTA_COUNTRIES.concat(MFN_COUNTRIES).slice()
+    .sort(function (a, b) { return a.localeCompare(b); });
 
   // 0 = ro'yxatda yo'q (boshqa), 1 = 1-ilova (MFN), 2 = 2-ilova (erkin savdo)
   function countryAnnex(name) {
@@ -574,6 +578,76 @@
     if (FTA_COUNTRIES.indexOf(name) >= 0) return 2;
     if (MFN_COUNTRIES.indexOf(name) >= 0) return 1;
     return 0;
+  }
+
+  // Free-text → official name matcher (instant, offline). Handles Uzbek names,
+  // apostrophe variants, and common EN/RU aliases. Returns "" if unresolved.
+  function normCty(s) {
+    // drop apostrophe variants entirely so "qozogiston" == "Qozog'iston"
+    return String(s || "").toLowerCase().replace(/[‘’ʻ'`]/g, "").replace(/\s+/g, " ").trim();
+  }
+  var COUNTRY_ALIASES = {
+    "china": "Xitoy Xalq Respublikasi", "prc": "Xitoy Xalq Respublikasi", "китай": "Xitoy Xalq Respublikasi", "хитой": "Xitoy Xalq Respublikasi",
+    "russia": "Rossiya Federatsiyasi", "россия": "Rossiya Federatsiyasi", "rf": "Rossiya Federatsiyasi",
+    "usa": "Amerika Qo'shma Shtatlari", "us": "Amerika Qo'shma Shtatlari", "united states": "Amerika Qo'shma Shtatlari", "america": "Amerika Qo'shma Shtatlari", "сша": "Amerika Qo'shma Shtatlari", "aqsh": "Amerika Qo'shma Shtatlari",
+    "turkey": "Turkiya Respublikasi", "turkiye": "Turkiya Respublikasi", "турция": "Turkiya Respublikasi",
+    "germany": "Germaniya Federativ Respublikasi", "deutschland": "Germaniya Federativ Respublikasi", "германия": "Germaniya Federativ Respublikasi",
+    "south korea": "Koreya Respublikasi", "korea": "Koreya Respublikasi", "корея": "Koreya Respublikasi",
+    "japan": "Yaponiya", "япония": "Yaponiya",
+    "kazakhstan": "Qozog'iston Respublikasi", "казахстан": "Qozog'iston Respublikasi",
+    "kyrgyzstan": "Qirg'iziston Respublikasi", "kyrgyz": "Qirg'iziston Respublikasi", "киргизия": "Qirg'iziston Respublikasi", "кыргызстан": "Qirg'iziston Respublikasi",
+    "tajikistan": "Tojikiston Respublikasi", "таджикистан": "Tojikiston Respublikasi",
+    "belarus": "Belarus Respublikasi", "беларусь": "Belarus Respublikasi", "беларус": "Belarus Respublikasi",
+    "ukraine": "Ukraina", "украина": "Ukraina",
+    "uk": "Buyuk Britaniya va Shimoliy Irlandiya Birlashgan Qirolligi", "united kingdom": "Buyuk Britaniya va Shimoliy Irlandiya Birlashgan Qirolligi", "england": "Buyuk Britaniya va Shimoliy Irlandiya Birlashgan Qirolligi", "britain": "Buyuk Britaniya va Shimoliy Irlandiya Birlashgan Qirolligi", "англия": "Buyuk Britaniya va Shimoliy Irlandiya Birlashgan Qirolligi", "великобритания": "Buyuk Britaniya va Shimoliy Irlandiya Birlashgan Qirolligi",
+    "india": "Hindiston Respublikasi", "индия": "Hindiston Respublikasi",
+    "france": "Fransiya Respublikasi", "франция": "Fransiya Respublikasi",
+    "italy": "Italiya Respublikasi", "италия": "Italiya Respublikasi",
+    "spain": "Ispaniya Qirolligi", "испания": "Ispaniya Qirolligi",
+    "poland": "Polsha Respublikasi", "польша": "Polsha Respublikasi",
+    "vietnam": "Vyetnam Sotsialistik Respublikasi", "вьетнам": "Vyetnam Sotsialistik Respublikasi",
+    "azerbaijan": "Ozarbayjon Respublikasi", "азербайджан": "Ozarbayjon Respublikasi",
+    "georgia": "Gruziya Respublikasi", "грузия": "Gruziya Respublikasi",
+    "moldova": "Moldova Respublikasi", "молдова": "Moldova Respublikasi",
+    "turkmenistan": "Turkmaniston", "туркменистан": "Turkmaniston"
+  };
+  function matchCountry(text) {
+    var t = normCty(text);
+    if (!t) return "";
+    var all = FTA_COUNTRIES.concat(MFN_COUNTRIES);
+    var i;
+    for (i = 0; i < all.length; i++) { if (normCty(all[i]) === t) return all[i]; }   // exact name
+    if (COUNTRY_ALIASES[t]) return COUNTRY_ALIASES[t];                                // exact alias
+    // alias contained in the text ("from china", "rossiyadan") — longest alias first
+    var keys = Object.keys(COUNTRY_ALIASES).sort(function (a, b) { return b.length - a.length; });
+    for (i = 0; i < keys.length; i++) { if (keys[i].length >= 3 && t.indexOf(keys[i]) >= 0) return COUNTRY_ALIASES[keys[i]]; }
+    // match against official names by leading word / substring (length-guarded)
+    if (t.length >= 3) {
+      var hits = [];
+      for (i = 0; i < all.length; i++) {
+        var n = normCty(all[i]), lead = n.split(" ")[0];
+        if (n.indexOf(t) >= 0 || t.indexOf(lead) === 0 || lead.indexOf(t) === 0) hits.push(all[i]);
+      }
+      if (hits.length === 1) return hits[0];
+      for (i = 0; i < hits.length; i++) { if (t.indexOf(normCty(hits[i]).split(" ")[0]) === 0) return hits[i]; }
+      if (hits.length > 1) return hits[0];
+    }
+    return "";
+  }
+  function annexLabel(annex) {
+    return annex === 2 ? "2-ilova · erkin savdo"
+      : annex === 1 ? "1-ilova · eng ko'p qulaylik (MFN)"
+      : "ro'yxatda yo'q (boshqa davlat)";
+  }
+  // AI orqali erkin matndan davlatni aniqlash (lokal moslik topilmaganda).
+  function detectCountryAI() {
+    var text = (state.originText || "").trim();
+    if (!text || !(window.DeklaAI && window.DeklaAI.configured())) return;
+    setState({ originDetecting: true });
+    window.DeklaAI.detectCountry(text, FTA_COUNTRIES.concat(MFN_COUNTRIES)).then(function (name) {
+      var resolved = matchCountry(name);
+      setState({ originCountry: resolved, originText: resolved || text, originDetecting: false });
+    }).catch(function () { setState({ originDetecting: false }); });
   }
   // sertifikatsiz qo'shimcha boj (advalor pog'onasi bo'yicha)
   function originSurcharge(baseAdv) {
@@ -802,8 +876,16 @@
       onbBtn: s.onb >= 2 ? "Boshlash" : "Keyingi",
       onbDot0: dot(0), onbDot1: dot(1), onbDot2: dot(2),
       // tovar kelib chiqishi bo'yicha preferensiya
-      originCountry: s.originCountry || "",
-      mfnCountries: MFN_COUNTRIES, ftaCountries: FTA_COUNTRIES,
+      originText: s.originText || "",
+      allCountries: ALL_COUNTRIES,
+      originDetectNote: s.originDetecting ? "AI aniqlamoqda…"
+        : (s.originCountry ? ("✓ " + s.originCountry + " — " + annexLabel(countryAnnex(s.originCountry)))
+          : ((s.originText || "").trim() ? ("“" + s.originText.trim() + "” — ro'yxatda topilmadi (boshqa davlat)") : "")),
+      originDetectColor: s.originCountry ? "#1ca354" : "#c9821a",
+      hasOriginNote: !!(s.originDetecting || s.originCountry || (s.originText || "").trim()),
+      showAiDetect: !!((s.originText || "").trim()) && !s.originCountry && !s.originDetecting
+        && !!(window.DeklaAI && window.DeklaAI.configured()),
+      aiDetectLabel: s.originDetecting ? "Aniqlanmoqda…" : "AI orqali aniqlash",
       certNoneBg: s.certType === "none" ? "#14284c" : "#fff",
       certNoneFg: s.certType === "none" ? "#fff" : "#5a6b86",
       certOriginBg: s.certType === "origin" ? "#14284c" : "#fff",
@@ -872,7 +954,8 @@
         runAI: runAI, genQuestions: genQuestions, runImageAI: runImageAI, runExcelAI: runExcelAI,
         pickImage: pickImage, pickExcel: pickExcel, pickDoc: pickDoc,
         back: back, nextOnb: nextOnb,
-        onCountry: function (e) { setState({ originCountry: e.target.value }); },
+        onCountryInput: function (e) { setState({ originText: e.target.value, originCountry: matchCountry(e.target.value) }); },
+        detectCountry: detectCountryAI,
         certNone: function () { setState({ certType: "none" }); },
         certOrigin: function () { setState({ certType: "origin" }); },
         certSt1: function () { setState({ certType: "st1" }); },

@@ -86,9 +86,11 @@ screens fill the viewport like a real mobile app.
   `window.DEKLA_BHM`. The payments screen shows the applied multiplier and the
   basis.
 - **Country-of-origin duty preferences (Resolution 2020/31-3, 22 Jun 2020)** —
-  the payments screen has a country selector (47 MFN "eng ko'p qulaylik"
-  countries in Annex 1, 10 free-trade countries in Annex 2) and a certificate
-  choice (none / certificate of origin / ST-1). The import duty is adjusted
+  the payments screen has a country-of-origin field (pick from the 47 MFN "eng
+  ko'p qulaylik" countries in Annex 1 and 10 free-trade countries in Annex 2 via
+  autocomplete, **or just type it** — a local matcher resolves common Uzbek/EN/RU
+  names instantly and Claude resolves anything else on demand) and a certificate
+  choice (Sertifikatsiz / Mavjud / ST-1). The import duty is adjusted
   accordingly: Annex 2 + ST-1 → 0%; Annex 1 + certificate of origin → base rate
   (1×); no certificate → base rate plus a surcharge by tier (base <10% → +5%,
   10–20% → +10%, 20–30% → +15%, ≥30% → +20%). The applied rule is shown under

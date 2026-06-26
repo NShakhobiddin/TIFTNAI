@@ -412,19 +412,18 @@
           <p style="font-size:13px;color:#7c879b;margin:0 0 16px">Hisoblangan to'lovlar ro'yxati</p>
           <div style="background:#fff;border:1px solid #e9edf4;border-radius:14px;padding:14px 15px;margin-bottom:14px">
             <div style="font-size:12.5px;font-weight:700;color:#14284c;margin-bottom:9px">Tovar kelib chiqish mamlakati</div>
-            <select value="{{ originCountry }}" onchange="{{ h.onCountry }}" style="width:100%;border:1px solid #dde3ee;border-radius:10px;padding:11px 12px;font-size:14px;color:#14284c;font-family:inherit;font-weight:600;background:#fff;outline:none;margin-bottom:14px">
-              <option value="">— Tanlang / boshqa davlat —</option>
-              <optgroup label="2-ilova · Erkin savdo (ST-1 → 0%)">
-                <sc-for list="{{ ftaCountries }}" as="c"><option value="{{ c }}">{{ c }}</option></sc-for>
-              </optgroup>
-              <optgroup label="1-ilova · Eng ko'p qulaylik (MFN)">
-                <sc-for list="{{ mfnCountries }}" as="c"><option value="{{ c }}">{{ c }}</option></sc-for>
-              </optgroup>
-            </select>
-            <div style="font-size:12.5px;font-weight:700;color:#14284c;margin-bottom:8px">Kelib chiqish sertifikati</div>
+            <input value="{{ originText }}" oninput="{{ h.onCountryInput }}" list="origin-countries" placeholder="Davlatni tanlang yoki yozing (AI aniqlaydi)" style="width:100%;box-sizing:border-box;border:1px solid #dde3ee;border-radius:10px;padding:11px 12px;font-size:14px;color:#14284c;font-family:inherit;font-weight:600;background:#fff;outline:none">
+            <datalist id="origin-countries"><sc-for list="{{ allCountries }}" as="c"><option value="{{ c }}"></option></sc-for></datalist>
+            <sc-if value="{{ hasOriginNote }}">
+            <div style="font-size:11.5px;font-weight:600;margin-top:7px;line-height:1.45;color: {{ originDetectColor }}">{{ originDetectNote }}</div>
+            </sc-if>
+            <sc-if value="{{ showAiDetect }}">
+            <div onclick="{{ h.detectCountry }}" style="display:inline-flex;align-items:center;gap:6px;margin-top:9px;background:#eef3fb;border:1px solid #dfe9f7;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:700;color:#2f6dd0;cursor:pointer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2f6dd0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 00-6 6c0 2 1 3 2 4s1 2 1 3h6c0-1 0-2 1-3s2-2 2-4a6 6 0 00-6-6z"></path><path d="M9 21h6"></path></svg>{{ aiDetectLabel }}</div>
+            </sc-if>
+            <div style="font-size:12.5px;font-weight:700;color:#14284c;margin:14px 0 8px">Kelib chiqish sertifikati</div>
             <div style="display:flex;gap:7px">
               <div onclick="{{ h.certNone }}" style="flex:1;text-align:center;border:1px solid #dde3ee;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;background: {{ certNoneBg }};color: {{ certNoneFg }}">Sertifikatsiz</div>
-              <div onclick="{{ h.certOrigin }}" style="flex:1;text-align:center;border:1px solid #dde3ee;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;background: {{ certOriginBg }};color: {{ certOriginFg }}">Kelib chiqish</div>
+              <div onclick="{{ h.certOrigin }}" style="flex:1;text-align:center;border:1px solid #dde3ee;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;background: {{ certOriginBg }};color: {{ certOriginFg }}">Mavjud</div>
               <div onclick="{{ h.certSt1 }}" style="flex:1;text-align:center;border:1px solid #dde3ee;border-radius:10px;padding:9px 4px;font-size:11.5px;font-weight:700;cursor:pointer;background: {{ certSt1Bg }};color: {{ certSt1Fg }}">ST-1</div>
             </div>
           </div>

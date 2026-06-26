@@ -256,8 +256,41 @@
     });
   }
 
+  /* ---- country-of-origin detection from free text ---- */
+  var COUNTRY_SCHEMA = {
+    type: "object",
+    properties: { country: { type: "string" } },
+    required: ["country"],
+    additionalProperties: false
+  };
+
+  // Map a free-text country name (any language/spelling) to EXACTLY one name
+  // from the provided list, or "" if none matches. Returns the matched string.
+  function detectCountry(text, countries) {
+    if (!configured()) return Promise.reject(new Error("AI sozlanmagan."));
+    var list = (countries || []).map(function (c, i) { return (i + 1) + ". " + c; }).join("\n");
+    var body = {
+      model: MODEL,
+      max_tokens: 120,
+      system: "Sen davlat nomlarini aniqlovchi yordamchisan. Foydalanuvchi tovar kelib chiqqan " +
+        "davlatni ixtiyoriy tilda/yozuvda kiritadi. Uni berilgan ro'yxatdagi AYNAN bitta nom bilan " +
+        "moslashtir. Mos kelmasa, bo'sh satr qaytar.",
+      messages: [{ role: "user", content:
+        "FOYDALANUVCHI KIRITDI: \"" + String(text || "").slice(0, 100) + "\"\n\n" +
+        "RO'YXAT (faqat shu nomlardan birini tanla, aynan ko'chir):\n" + list + "\n\n" +
+        "VAZIFA: mos davlat nomini 'country' maydonida AYNAN ro'yxatdagidek qaytar. " +
+        "Hech qaysisiga mos kelmasa, 'country' ni bo'sh satr (\"\") qil." }],
+      output_config: { format: { type: "json_schema", schema: COUNTRY_SCHEMA } }
+    };
+    return postMessages(body).then(function (data) {
+      var parsed = extractJson(firstText(data)) || {};
+      return (parsed.country || "").trim();
+    });
+  }
+
   window.DeklaAI = {
     classify: classify, askQuestions: askQuestions, describeImage: describeImage,
+    detectCountry: detectCountry,
     configured: configured, endpoint: endpoint, model: MODEL
   };
 })();
