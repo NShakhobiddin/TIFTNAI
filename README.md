@@ -85,6 +85,14 @@ screens fill the viewport like a real mobile app.
   BHM defaults to 412 000 so'm and can be updated yearly via
   `window.DEKLA_BHM`. The payments screen shows the applied multiplier and the
   basis.
+- **Country-of-origin duty preferences (Resolution 2020/31-3, 22 Jun 2020)** —
+  the payments screen has a country selector (47 MFN "eng ko'p qulaylik"
+  countries in Annex 1, 10 free-trade countries in Annex 2) and a certificate
+  choice (none / certificate of origin / ST-1). The import duty is adjusted
+  accordingly: Annex 2 + ST-1 → 0%; Annex 1 + certificate of origin → base rate
+  (1×); no certificate → base rate plus a surcharge by tier (base <10% → +5%,
+  10–20% → +10%, 20–30% → +15%, ≥30% → +20%). The applied rule is shown under
+  the payments table.
 - **Real navigation** with a back stack and a bottom navigation bar.
 - **No build step, no dependencies, no server** — pure HTML, CSS and a small
   vanilla-JS runtime. Opens straight from `file://`.

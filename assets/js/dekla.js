@@ -8,7 +8,9 @@
 
   /* ---------------- App state & logic ---------------- */
   var state = {
-    screen: "splash", stack: [], onb: 0, cert: false,
+    screen: "splash", stack: [], onb: 0,
+    // tovar kelib chiqishi bo'yicha boj preferensiyasi
+    originCountry: "", certType: "none", // certType: none | origin | st1
     invoice: 10000, transport: 800, insurance: 200, other: 150, rate: 12600,
     // exchange rate (USD) source — auto from Central Bank until manually edited
     rateAuto: true, rateDate: "", rateLoading: false, rateError: false,
@@ -534,6 +536,70 @@
   // "1.5" -> "1,5" (Uzbek decimal comma) for display
   function numUz(n) { return String(n).replace(".", ","); }
 
+  /* ---- Tovar kelib chiqishi bo'yicha boj preferensiyasi ----
+     Manba: ITSV, TIV va DBQ ning 2020-yil 22-iyundagi
+     2020/31-3, 51, 01-02/8-27-son qarori.
+       1-ilova — eng ko'p qulaylik rejimi (MFN) davlatlari:
+                 kelib chiqish sertifikati bilan boj = asosiy stavka (1×).
+       2-ilova — erkin savdo rejimi davlatlari:
+                 ST-1 sertifikati bilan boj = 0%.
+       Kelib chiqish sertifikati bo'lmasa (qaysi davlatdan kelishidan qat'i
+       nazar) advalor stavka pog'onasiga qarab qo'shimcha boj qo'shiladi. */
+  var MFN_COUNTRIES = [ // 1-ilova
+    "Avstriya Respublikasi", "Afg'oniston Islom Respublikasi", "Bangladesh Xalq Respublikasi",
+    "Belgiya Qirolligi", "Bolgariya Respublikasi", "Braziliya Federativ Respublikasi",
+    "Buyuk Britaniya va Shimoliy Irlandiya Birlashgan Qirolligi", "Vengriya",
+    "Vyetnam Sotsialistik Respublikasi", "Germaniya Federativ Respublikasi", "Gretsiya Respublikasi",
+    "Daniya Qirolligi", "Misr Arab Respublikasi", "Isroil Davlati", "Hindiston Respublikasi",
+    "Indoneziya Respublikasi", "Irlandiya", "Ispaniya Qirolligi", "Italiya Respublikasi",
+    "Iordaniya Hoshimiylik Qirolligi", "Kipr Respublikasi", "Koreya Respublikasi",
+    "Xitoy Xalq Respublikasi", "Latviya Respublikasi", "Litva Respublikasi", "Malta Respublikasi",
+    "Lyuksemburg Buyuk Gersogligi", "Niderlandiya Qirolligi", "Portugaliya Respublikasi",
+    "Pokiston Islom Respublikasi", "Polsha Respublikasi", "Sloveniya Respublikasi", "Ruminiya",
+    "Slovakiya Respublikasi", "Singapur Respublikasi", "Amerika Qo'shma Shtatlari",
+    "Turkiya Respublikasi", "Finlyandiya Respublikasi", "Fransiya Respublikasi",
+    "Xorvatiya Respublikasi", "Chexiya Respublikasi", "Shvetsiya Qirolligi",
+    "Shveysariya Konfederatsiyasi", "Estoniya Respublikasi", "Yaponiya",
+    "Saudiya Arabistoni Qirolligi", "Malayziya"
+  ];
+  var FTA_COUNTRIES = [ // 2-ilova
+    "Belarus Respublikasi", "Gruziya Respublikasi", "Qozog'iston Respublikasi",
+    "Qirg'iziston Respublikasi", "Moldova Respublikasi", "Rossiya Federatsiyasi",
+    "Turkmaniston", "Ukraina", "Tojikiston Respublikasi", "Ozarbayjon Respublikasi"
+  ];
+
+  // 0 = ro'yxatda yo'q (boshqa), 1 = 1-ilova (MFN), 2 = 2-ilova (erkin savdo)
+  function countryAnnex(name) {
+    if (!name) return 0;
+    if (FTA_COUNTRIES.indexOf(name) >= 0) return 2;
+    if (MFN_COUNTRIES.indexOf(name) >= 0) return 1;
+    return 0;
+  }
+  // sertifikatsiz qo'shimcha boj (advalor pog'onasi bo'yicha)
+  function originSurcharge(baseAdv) {
+    if (baseAdv < 10) return 5;
+    if (baseAdv < 20) return 10;
+    if (baseAdv < 30) return 15;
+    return 20;
+  }
+  // Yakuniy boj stavkasini va qo'llanilgan qoidani qaytaradi.
+  function effectiveDuty(baseAdv, country, certType) {
+    var annex = countryAnnex(country);
+    if (certType === "st1" && annex === 2) {
+      return { rate: 0, kind: "fta", note: "2-ilova (erkin savdo) + ST-1 → boj 0%" };
+    }
+    if (certType !== "none" && annex === 1) {
+      return { rate: baseAdv, kind: "mfn",
+        note: "1-ilova (eng ko'p qulaylik) + kelib chiqish sertifikati → asosiy stavka (1×)" };
+    }
+    if (certType === "none") {
+      var sur = originSurcharge(baseAdv);
+      return { rate: baseAdv + sur, kind: "surcharge", surcharge: sur,
+        note: "Kelib chiqish sertifikatisiz → asosiy " + numUz(baseAdv) + "% + qo'shimcha " + sur + "%" };
+    }
+    return { rate: baseAdv, kind: "base", note: "Sertifikat mavjud — asosiy stavka (1×)" };
+  }
+
   function renderVals() {
     var s = state;
     var go = function (sc) {
@@ -563,8 +629,10 @@
 
     var cipUsd = (s.invoice || 0) + (s.transport || 0) + (s.insurance || 0) + (s.other || 0);
     var cipUzs = cipUsd * (s.rate || 0);
-    // ad valorem import duty; an ST-1 certificate zeroes it.
-    var boj = s.cert ? 0 : cipUzs * (dutyAdv / 100);
+    // import duty adjusted for the goods' country of origin + certificate
+    var duty = effectiveDuty(dutyAdv, s.originCountry, s.certType);
+    var effAdv = duty.rate;
+    var boj = cipUzs * (effAdv / 100);
     var aksiz = 0; // aksiz solig'i — hozircha 0 (ayrim kodlar uchun keyin qo'shiladi)
     // QQS barcha tovarlarga 12%; bazasi = tovar qiymati + boj + aksiz.
     var qqs = (cipUzs + boj + aksiz) * 0.12;
@@ -574,7 +642,7 @@
     // Jami bojxona to'lovlari = boj + aksiz + QQS + yig'im.
     var jamiUzs = boj + aksiz + qqs + yigim;
     var payments = [
-      { label: "Bojxona boji", rate: s.cert ? "0%" : (dutyAdv + "%"), uzs: fmt(boj) },
+      { label: "Bojxona boji", rate: numUz(effAdv) + "%", uzs: fmt(boj) },
       { label: "Aksiz", rate: "0%", uzs: "0" },
       { label: "QQS", rate: "12%", uzs: fmt(qqs) },
       { label: "Bojxona rasmiylashtirish yig'imi", rate: clrMult ? (numUz(clrMult) + "× BHM") : "—", uzs: fmt(yigim) }
@@ -733,10 +801,16 @@
       onb0: s.onb === 0, onb1: s.onb === 1, onb2: s.onb === 2,
       onbBtn: s.onb >= 2 ? "Boshlash" : "Keyingi",
       onbDot0: dot(0), onbDot1: dot(1), onbDot2: dot(2),
-      cert: s.cert,
-      certLabel: s.cert ? "ST-1 sertifikat: mavjud (boj 0%)" : "ST-1 sertifikat: yo'q",
-      certToggleBg: s.cert ? "#1ca354" : "#cfd7e3",
-      certToggleJustify: s.cert ? "flex-end" : "flex-start",
+      // tovar kelib chiqishi bo'yicha preferensiya
+      originCountry: s.originCountry || "",
+      mfnCountries: MFN_COUNTRIES, ftaCountries: FTA_COUNTRIES,
+      certNoneBg: s.certType === "none" ? "#14284c" : "#fff",
+      certNoneFg: s.certType === "none" ? "#fff" : "#5a6b86",
+      certOriginBg: s.certType === "origin" ? "#14284c" : "#fff",
+      certOriginFg: s.certType === "origin" ? "#fff" : "#5a6b86",
+      certSt1Bg: s.certType === "st1" ? "#14284c" : "#fff",
+      certSt1Fg: s.certType === "st1" ? "#fff" : "#5a6b86",
+      dutyPrefNote: duty.note,
       invoice: s.invoice, transport: s.transport, insurance: s.insurance, other: s.other, rate: s.rate,
       // exchange-rate source note shown under the rate input
       rateNote: s.rateLoading ? "MB kursi yuklanmoqda…"
@@ -763,7 +837,7 @@
       selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
       selConfPct: selConfPct, selReasoning: selReasoning,
       // import-duty rate for the selected code (PP-3818)
-      dutyRateText: dutyRateText, hasDuty: !!dutyInfo, dutyAdvPct: (s.cert ? "0%" : dutyAdv + "%"),
+      dutyRateText: dutyRateText, hasDuty: !!dutyInfo, dutyAdvPct: numUz(dutyAdv) + "%",
       dutyFootnote: (dutyInfo && dutyInfo.footnote) ? dutyInfo.footnote : "",
       hasDutyFootnote: !!(dutyInfo && dutyInfo.footnote),
       hasNote: !!noteLat, noteOpen: noteOpen, selNote: noteLat, selNotePreview: notePreview,
@@ -797,7 +871,11 @@
         onFeature: function (e) { setSilent({ feature: e.target.value }); },
         runAI: runAI, genQuestions: genQuestions, runImageAI: runImageAI, runExcelAI: runExcelAI,
         pickImage: pickImage, pickExcel: pickExcel, pickDoc: pickDoc,
-        back: back, nextOnb: nextOnb, toggleCert: function () { setState(function (p) { return { cert: !p.cert }; }); },
+        back: back, nextOnb: nextOnb,
+        onCountry: function (e) { setState({ originCountry: e.target.value }); },
+        certNone: function () { setState({ certType: "none" }); },
+        certOrigin: function () { setState({ certType: "origin" }); },
+        certSt1: function () { setState({ certType: "st1" }); },
         toggleNote: function () { setState(function (p) { return { noteOpen: !p.noteOpen }; }); },
         splash: go("splash"), login: go("login"), sms: go("sms"), onb: go("onb"), dash: go("dash"),
         tezkor: go("tezkor"), new: go("new"), product: go("product"), image: go("image"), excel: go("excel"),
@@ -897,7 +975,9 @@
     renderNodes(node.childNodes, scope, el);
 
     // keep controlled inputs in sync as a DOM property too
-    if (node.localName === "input" && el.hasAttribute("value")) {
+    // (select needs this after its <option>s are appended, to reflect selection)
+    if ((node.localName === "input" || node.localName === "select" || node.localName === "textarea")
+        && el.hasAttribute("value")) {
       el.value = el.getAttribute("value");
     }
     out.appendChild(el);
