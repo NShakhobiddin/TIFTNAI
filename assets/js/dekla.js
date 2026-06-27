@@ -25,7 +25,9 @@
     aiQuestions: [], aiAnswers: {}, candidates: [], productCtx: null,
     // uploads
     imageFiles: [], imageThumbs: [], excelName: "", excelRows: null, docName: "",
-    excelResults: null, excelTotal: 0, excelShown: 0
+    excelResults: null, excelTotal: 0, excelShown: 0,
+    // auth + activity tracking
+    loginPhone: "", smsCode: "", calcSource: "matn", lastSaved: false
   };
 
   function setState(patch) {
@@ -37,6 +39,53 @@
   // Silent update — store input values without re-rendering (keeps native
   // focus/caret on free-text fields the UI doesn't derive anything from).
   function setSilent(patch) { Object.assign(state, patch); }
+
+  /* ---------------- Persistent store (localStorage) ----------------
+     Real, durable data for history, saved items, session and plan. */
+  var Store = (function () {
+    function read(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+    function write(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+    return {
+      session: function () { return read("dekla_session", null); },
+      setSession: function (s) { write("dekla_session", s); },
+      history: function () { return read("dekla_history", []); },
+      addHistory: function (rec) {
+        var h = read("dekla_history", []);
+        // drop any prior entry of the same calculation, then add to the top
+        h = h.filter(function (r) { return r.id !== rec.id; });
+        h.unshift(rec); if (h.length > 100) h = h.slice(0, 100); write("dekla_history", h); return rec;
+      },
+      saved: function () { return read("dekla_saved", []); },
+      isSaved: function (id) { return read("dekla_saved", []).some(function (r) { return r.id === id; }); },
+      toggleSaved: function (rec) {
+        var s = read("dekla_saved", []);
+        var i = -1; for (var k = 0; k < s.length; k++) { if (s[k].id === rec.id) { i = k; break; } }
+        if (i >= 0) s.splice(i, 1); else s.unshift(rec);
+        write("dekla_saved", s); return i < 0;
+      },
+      removeSaved: function (id) {
+        var s = read("dekla_saved", []).filter(function (r) { return r.id !== id; });
+        write("dekla_saved", s);
+      },
+      plan: function () { return read("dekla_plan", "Bepul"); },
+      setPlan: function (p) { write("dekla_plan", p); }
+    };
+  })();
+
+  function pad2(n) { return (n < 10 ? "0" : "") + n; }
+  function fmtDate(ts) {
+    var d = new Date(ts);
+    return pad2(d.getDate()) + "." + pad2(d.getMonth() + 1) + "." + d.getFullYear() + " · " + pad2(d.getHours()) + ":" + pad2(d.getMinutes());
+  }
+  function isToday(ts) {
+    var d = new Date(ts), n = new Date();
+    return d.getDate() === n.getDate() && d.getMonth() === n.getMonth() && d.getFullYear() === n.getFullYear();
+  }
+  function riskColorOf(band) {
+    return band === "Past risk" ? { fg: "#1a8c44", bg: "#e6f6ec" }
+      : band === "O'rta risk" ? { fg: "#c9821a", bg: "#fef3e6" }
+      : { fg: "#d84a4a", bg: "#fdeaea" };
+  }
 
   /* ---------------- Central Bank (CBU) exchange rate ----------------
      USD rasmiy kursini O'zbekiston Markaziy bankidan oladi:
@@ -206,7 +255,7 @@
 
   function selectCode(code) {
     var sel = tiftnReady() ? window.TifTn.get(code) : { code: code };
-    setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]), noteOpen: false }; });
+    setState(function (p) { return { selected: sel, screen: "tiftn", stack: p.stack.concat([p.screen]), noteOpen: false, calcSource: p.calcSource || "katalog" }; });
   }
 
   /* ---------------- TIFTN catalog (browse + manual pick) ---------------- */
@@ -335,7 +384,7 @@
     if (!name && !desc) { setState({ aiError: "Avval tovar nomini kiriting." }); return; }
     var query = [name, desc].filter(Boolean).join(" ");
     var product = { name: name || query, desc: desc };
-    setSilent({ aiError: "", aiAnswers: {}, productCtx: product });
+    setSilent({ aiError: "", aiAnswers: {}, productCtx: product, calcSource: "matn" });
 
     if (!aiHas()) { goToClassify(product, query); return; }
 
@@ -434,11 +483,158 @@
     });
   }
 
+  /* ---------------- Calculation records (history / saved) ---------------- */
+  // Stable, content-based id so the same calculation maps to the same record
+  // (lets the final screen know whether it is already saved).
+  function recordId(s) {
+    if (!s.selected) return "";
+    return [s.selected.code, s.invoice, s.transport, s.insurance, s.other, s.rate, s.certType, s.originCountry].join("|");
+  }
+  // Build a durable record from the current calculation (lastCalc + inputs).
+  function currentRecord() {
+    var c = lastCalc, s = state;
+    if (!c || !s.selected) return null;
+    var ts = Date.now();
+    return {
+      id: recordId(s),
+      name: c.selName, code: c.selCode, source: s.calcSource || "matn",
+      totalUzs: c.jamiUzs, totalStr: c.jamiUzsStr, cipUsdStr: c.cipUsdStr,
+      conf: c.selConf || 0, riskScore: c.riskScore, riskBand: c.riskBand,
+      ts: ts, dateStr: fmtDate(ts),
+      snapshot: {
+        code: s.selected.code,
+        invoice: s.invoice, transport: s.transport, insurance: s.insurance, other: s.other,
+        rate: s.rate, certType: s.certType, originCountry: s.originCountry, originText: s.originText
+      }
+    };
+  }
+  // Reopen a saved record: restore its inputs so the live calc reproduces it.
+  function openRecord(rec) {
+    var snap = rec.snapshot || {};
+    var sel = (tiftnReady() && snap.code && window.TifTn.get(snap.code)) || { code: snap.code, name: rec.name, path: "", chapterTitle: "", unit: "" };
+    setState(function (p) {
+      return {
+        selected: sel,
+        invoice: snap.invoice, transport: snap.transport, insurance: snap.insurance, other: snap.other,
+        rate: snap.rate != null ? snap.rate : p.rate,
+        certType: snap.certType || "none", originCountry: snap.originCountry || "", originText: snap.originText || "",
+        rateAuto: false, screen: "final", stack: p.stack.concat([p.screen])
+      };
+    });
+  }
+  // Reach the final screen and persist the calculation to history.
+  function goFinal() {
+    var rec = currentRecord();
+    if (rec) Store.addHistory(rec);
+    setState(function (p) { return { screen: "final", stack: p.stack.concat([p.screen]) }; });
+  }
+  function toggleSave() {
+    var rec = currentRecord();
+    if (!rec) return;
+    Store.toggleSaved(rec);
+    setState({}); // re-render so the button reflects the new state
+  }
+
+  /* ---------------- Report exports (Excel / PDF) ---------------- */
+  function exportRows() {
+    var c = lastCalc || {}, s = state;
+    var dutyInfo = (s.selected && tiftnReady() && window.TifTn.duty) ? window.TifTn.duty(s.selected.code) : null;
+    var dutyAdv = dutyInfo ? (dutyInfo.adv || 0) : 5;
+    var d = effectiveDuty(dutyAdv, s.originCountry, s.certType);
+    var cipUsd = (s.invoice || 0) + (s.transport || 0) + (s.insurance || 0) + (s.other || 0);
+    var cipUzs = cipUsd * (s.rate || 0);
+    var boj = cipUzs * (d.rate / 100);
+    var qqs = (cipUzs + boj) * 0.12;
+    var clrMult = cipUsd > 0 ? clearanceMultiplier(cipUsd) : 0;
+    var yigim = clrMult * BHM;
+    return [
+      ["Dekla AI — bojxona hisob-kitobi", ""],
+      ["Sana", fmtDate(Date.now())],
+      ["TIFTN kodi", c.selCode || ""],
+      ["Tovar", c.selName || ""],
+      ["Kelib chiqish mamlakati", s.originCountry || "—"],
+      ["Sertifikat", s.certType === "st1" ? "ST-1" : s.certType === "origin" ? "Kelib chiqish (mavjud)" : "Sertifikatsiz"],
+      ["", ""],
+      ["Bojxona qiymati (USD)", fmtUsd(cipUsd)],
+      ["Valyuta kursi (UZS/USD)", s.rate || 0],
+      ["Bojxona qiymati (UZS)", Math.round(cipUzs)],
+      ["", ""],
+      ["Bojxona boji (" + numUz(d.rate) + "%)", Math.round(boj)],
+      ["Aksiz", 0],
+      ["QQS (12%)", Math.round(qqs)],
+      ["Rasmiylashtirish yig'imi (" + numUz(clrMult) + "× BHM)", Math.round(yigim)],
+      ["Jami to'lovlar (UZS)", Math.round(boj + qqs + yigim)],
+      ["", ""],
+      ["Risk darajasi", (c.riskBand || "") + " (" + (c.riskScore || 0) + "/100)"]
+    ];
+  }
+  function exportExcel() {
+    loadXlsx().then(function (XLSX) {
+      var ws = XLSX.utils.aoa_to_sheet(exportRows());
+      ws["!cols"] = [{ wch: 34 }, { wch: 22 }];
+      var wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Hisob-kitob");
+      XLSX.writeFile(wb, "dekla-hisobot-" + (state.selected ? digitsSafe(state.selected.code) : "natija") + ".xlsx");
+    }).catch(function () { setState({ aiError: "Excel kutubxonasini yuklab bo'lmadi (internet)." }); });
+  }
+  function digitsSafe(s) { return String(s || "").replace(/[^0-9]/g, "") || "natija"; }
+  // PDF via the browser's print dialog (Save as PDF) using a print-only layout.
+  function exportPdf() {
+    var rows = exportRows();
+    var esc = function (x) { return String(x).replace(/[&<>]/g, function (m) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]; }); };
+    var body = rows.map(function (r) {
+      if (!r[0] && !r[1]) return '<tr><td colspan="2" style="height:8px"></td></tr>';
+      var strong = (r[1] === "" );
+      return '<tr><td style="padding:6px 10px;color:#3a455c;' + (strong ? 'font-weight:700;color:#14284c;font-size:15px' : '') + '">' + esc(r[0]) +
+        '</td><td style="padding:6px 10px;text-align:right;font-weight:700;color:#14284c">' + esc(r[1]) + '</td></tr>';
+    }).join("");
+    var html = '<!doctype html><html><head><meta charset="utf-8"><title>Dekla AI hisobot</title></head>' +
+      '<body style="font-family:Arial,sans-serif;color:#14284c;padding:24px;max-width:640px;margin:0 auto">' +
+      '<h2 style="color:#0a1b3d;margin:0 0 4px">Dekla AI — bojxona hisob-kitobi</h2>' +
+      '<div style="color:#7c879b;font-size:13px;margin-bottom:16px">' + esc(fmtDate(Date.now())) + '</div>' +
+      '<table style="width:100%;border-collapse:collapse;font-size:14px;border:1px solid #e9edf4">' + body + '</table>' +
+      '<p style="color:#9aa4b6;font-size:11px;margin-top:18px">Axborot-tahliliy hisob-kitob. Yakuniy qaror vakolatli organ tomonidan tasdiqlanadi.</p>' +
+      '<script>window.onload=function(){setTimeout(function(){window.print();},300);}<\/script></body></html>';
+    var w = window.open("", "_blank");
+    if (w) { w.document.open(); w.document.write(html); w.document.close(); }
+    else { setState({ aiError: "PDF uchun yangi oynaga ruxsat bering." }); }
+  }
+
+  /* ---------------- Auth / session ---------------- */
+  function enterApp() {
+    setState(function (p) { return { screen: Store.session() ? "dash" : "login", stack: [], aiError: "" }; });
+  }
+  function sendSms() {
+    var phone = (state.loginPhone || "").replace(/[^0-9]/g, "");
+    if (phone.length < 9) { setState({ aiError: "Telefon raqamini to'liq kiriting (9 raqam)." }); return; }
+    setState(function (p) { return { aiError: "", smsCode: "", screen: "sms", stack: p.stack.concat([p.screen]) }; });
+  }
+  function confirmSms() {
+    var code = (state.smsCode || "").replace(/[^0-9]/g, "");
+    if (code.length < 6) { setState({ aiError: "6 xonali kodni kiriting." }); return; }
+    Store.setSession({ phone: "+998 " + (state.loginPhone || "").replace(/[^0-9]/g, ""), ts: Date.now() });
+    setState(function (p) { return { aiError: "", screen: "onb", onb: 0, stack: [] }; });
+  }
+  function logout() {
+    try { localStorage.removeItem("dekla_session"); } catch (e) {}
+    setState({ loginPhone: "", smsCode: "", aiError: "", screen: "login", stack: [] });
+  }
+  function selectPlan(name) {
+    Store.setPlan(name);
+    setState(function (p) { var st = p.stack.slice(); var prev = st.pop() || "dash"; return { screen: prev, stack: st }; });
+  }
+  function openSupport() {
+    var url = "https://t.me/share/url?url=Dekla%20AI%20yordam";
+    var tg = window.Telegram && window.Telegram.WebApp;
+    if (tg && tg.openTelegramLink) { try { tg.openTelegramLink("https://t.me/"); return; } catch (e) {} }
+    try { window.open("https://t.me/", "_blank"); } catch (e) {}
+  }
+
   // Image → AI reads the photo → generates its own questions → questions screen.
   function runImageAI() {
     if (!state.imageFiles || !state.imageFiles.length) { setState({ aiError: "Avval rasm tanlang." }); return; }
     if (!aiHas()) { setState({ aiError: "Rasm tahlili uchun AI server (Worker) ulanishi kerak." }); return; }
-    setSilent({ aiLoading: true, aiError: "" });
+    setSilent({ aiLoading: true, aiError: "", calcSource: "rasm" });
     Overlay.show({
       title: "Rasm tahlil qilinmoqda",
       subtitle: "AI rasmni o'qib, savollar tuzmoqda",
@@ -987,6 +1183,32 @@
         ? "Xavfni kamaytirish uchun kelib chiqish sertifikati va mamlakatni aniqlashtiring."
         : "Yuqori xavf: kelib chiqish sertifikati va hujjatlarni to'liq rasmiylashtiring, aks holda tekshiruv ehtimoli yuqori.";
 
+    // snapshot the current calculation so it can be saved to history / reopened
+    lastCalc = {
+      selName: selName, selCode: selCode, selConf: selConf,
+      jamiUzs: jamiUzs, jamiUzsStr: fmt(jamiUzs), cipUsdStr: fmtUsd(cipUsd),
+      riskScore: risk.score, riskBand: riskBand
+    };
+
+    // ---- persistent data: stats, history, saved (dashboard + lists) ----
+    var hist = Store.history(), savedArr = Store.saved(), sess = Store.session();
+    var todayCount = 0, confSum = 0;
+    for (var hi = 0; hi < hist.length; hi++) { if (isToday(hist[hi].ts)) todayCount++; confSum += (hist[hi].conf || 0); }
+    var avgConf = hist.length ? Math.round(confSum / hist.length) : 98;
+    var plan = Store.plan(), isFreePlan = plan === "Bepul", DAILY = 30;
+    var remaining = Math.max(0, DAILY - todayCount);
+    var ringPct = isFreePlan ? Math.round(remaining / DAILY * 100) : 100;
+    var recId = recordId(s), isSavedNow = recId ? Store.isSaved(recId) : false;
+    var mkRec = function (r) {
+      var rc = riskColorOf(r.riskBand);
+      return {
+        name: r.name, code: r.code, totalStr: (r.totalStr || "") + " so'm", dateStr: r.dateStr,
+        bandShort: (r.riskBand || "").replace(" risk", ""), bandFg: rc.fg, bandBg: rc.bg,
+        open: (function (rec) { return function () { openRecord(rec); }; })(r),
+        remove: (function (id) { return function () { Store.removeSaved(id); setState({}); }; })(r.id)
+      };
+    };
+
     return {
       isSplash: sc === "splash", isLogin: sc === "login", isSms: sc === "sms", isOnb: sc === "onb",
       isDash: sc === "dash", isTezkor: sc === "tezkor", isNew: sc === "new", isProduct: sc === "product",
@@ -1046,6 +1268,21 @@
       selCode: selCode, selName: selName, selDesc: selDesc, selUnit: selUnit,
       selConfPct: selConfPct, selReasoning: selReasoning,
       // import-duty rate for the selected code (PP-3818)
+      // dashboard stats (live, from history/saved)
+      freeMain: isFreePlan ? String(remaining) : "Cheksiz",
+      freeSub: isFreePlan ? ("/" + DAILY) : "",
+      freeNote: isFreePlan ? "Bugun foydalanish limiti" : ("Faol tarif: " + plan),
+      freeRingPct: ringPct + "%", freeRingOffset: (188.5 * (1 - ringPct / 100)).toFixed(1),
+      statToday: todayCount, statTotal: hist.length, statSaved: savedArr.length, statConf: avgConf + "%",
+      // history + saved lists
+      historyList: hist.map(mkRec), hasHistory: hist.length > 0,
+      savedList: savedArr.map(mkRec), hasSaved: savedArr.length > 0,
+      // final screen
+      finalRiskText: riskBand + " (" + risk.score + "/100)", finalRiskColor: riskColor,
+      finalSaveLabel: isSavedNow ? "Saqlangan ✓" : "Saqlash",
+      // auth / profile
+      loginPhone: s.loginPhone || "", smsCode: s.smsCode || "",
+      profilePhone: (sess && sess.phone) || "—", profilePlan: plan, planName: plan,
       // mandatory certification (VMQ-43)
       permitCerts: permitCerts, permitHasCerts: permitCerts.length > 0, permitNoCerts: permitCerts.length === 0,
       permitSubtitle: permitCerts.length > 0
@@ -1124,6 +1361,13 @@
         hujjat: go("hujjat"), ai: go("ai"), tiftn: go("tiftn"), alt: go("alt"), value: go("value"),
         pay: go("pay"), permit: go("permit"), risk: go("risk"), final: go("final"), profile: go("profile"),
         help: go("help"), tariffs: go("tariffs"), hisob: go("hisob"), saqlangan: go("saqlangan"),
+        // auth + real actions
+        enter: enterApp, sendSms: sendSms, confirmSms: confirmSms, logout: logout,
+        onLoginPhone: function (e) { setSilent({ loginPhone: e.target.value }); setState({ aiError: "" }); },
+        onSmsCode: function (e) { setSilent({ smsCode: e.target.value }); setState({ aiError: "" }); },
+        goFinal: goFinal, exportPdf: exportPdf, exportExcel: exportExcel, toggleSave: toggleSave,
+        selectStandart: function () { selectPlan("Standart"); }, selectPro: function () { selectPlan("Pro"); },
+        openSupport: openSupport,
         onInvoice: num("invoice"), onTransport: num("transport"), onInsurance: num("insurance"),
         onOther: num("other"),
         // manual rate edit switches the source off "auto" so CBU won't overwrite it
@@ -1226,7 +1470,7 @@
   }
 
   /* ---------------- Mount & render loop ---------------- */
-  var root, template, lastScreen = null;
+  var root, template, lastScreen = null, lastCalc = null;
 
   function render() {
     // remember focus so number inputs don't lose it on re-render
@@ -1268,10 +1512,31 @@
     }
   }
 
+  // Block zoom gestures that CSS/viewport miss (iOS pinch + double-tap).
+  // touch-action:manipulation already kills double-tap zoom on buttons/inputs;
+  // here we also guard pinch and double-tap on plain (non-interactive) areas
+  // without ever cancelling a real tap on a control.
+  function blockZoom() {
+    var stop = function (e) { if (e.cancelable) e.preventDefault(); };
+    ["gesturestart", "gesturechange", "gestureend"].forEach(function (ev) {
+      document.addEventListener(ev, stop, { passive: false });
+    });
+    var lastTouch = 0, SEL = "button,a,input,select,textarea,label,[onclick]";
+    document.addEventListener("touchend", function (e) {
+      var now = e.timeStamp || +new Date();
+      if (now - lastTouch <= 320 && e.cancelable) {
+        var t = e.target;
+        if (!(t && t.closest && t.closest(SEL))) e.preventDefault(); // non-interactive → no zoom
+      }
+      lastTouch = now;
+    }, { passive: false });
+  }
+
   function init() {
     root = document.getElementById("app");
     var tplEl = document.getElementById("app-tpl");
     template = tplEl.content || tplEl;
+    blockZoom();
     render();
     initRate(); // pull the live USD rate from the Central Bank
   }

@@ -2,6 +2,10 @@
    Dekla AI — app styles (full-screen, no phone frame)
    ============================================================ */
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+/* Disable double-tap-to-zoom everywhere and stop text auto-resizing, so the
+   app feels stable and native (no accidental zoom on a quick second tap). */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; touch-action: manipulation; }
+button, a, [onclick], input, select, textarea, label { touch-action: manipulation; }
 /* Lock the document so only the in-app scroll area moves — no page-level
    rubber-band / overscroll that would drift the layout or drag the Telegram
    window. This is what makes it feel like a native app. */

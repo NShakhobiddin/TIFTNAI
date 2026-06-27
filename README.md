@@ -77,7 +77,24 @@ screens fill the viewport like a real mobile app.
   live gauge needle, colour-coded band, a factor checklist (what raises/lowers
   the score) and tailored advice.
 - **Stable, app-like scrolling** — re-renders preserve the scroll position, so
-  typing or tapping chips never jumps the screen back to the top.
+  typing or tapping chips never jumps the screen back to the top. Double-tap and
+  pinch zoom are disabled (viewport + `touch-action: manipulation` + gesture
+  guards) so the layout stays put.
+- **Real, persistent app** (everything is wired, no dead screens):
+  - **Auth** — phone login + 6-digit code create a session in `localStorage`;
+    returning users skip straight to the dashboard; the profile shows the real
+    number and **Chiqish** logs out.
+  - **History (Hisoblashlar)** — every completed calculation is saved (code,
+    total, risk, date) and reopens with its exact inputs restored.
+  - **Saved (Saqlangan)** — the final screen has a working **Saqlash** bookmark;
+    saved items list with open / remove.
+  - **Live dashboard** — free-request counter, ring and the four stat cards are
+    computed from real history (today's count, total, saved, average confidence)
+    and the selected plan.
+  - **Exports** — the final screen exports a real `.xlsx` breakdown (SheetJS)
+    and a print-to-PDF report; both reflect the current calculation.
+  - **Tariffs** — selecting a plan persists it and flips the dashboard to
+    "Cheksiz"; support/contact links open Telegram.
 - **Document upload** — pick an invoice / spec / packing-list file (file picker
   wired; manual continue).
 - **Telegram Mini App** — opens inside a Telegram bot via the WebApp SDK
